@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+  <!-- 元数据 -->
+  <meta charset="utf-8">
+  
+  
+  <title>ArrayList的removeIf和iterator.remove性能比较 | Hexo</title>
+  <link rel="canonical" href="http://example.com/2021/06/22/ArrayList%E7%9A%84removeIf%E5%92%8Citerator.remove%E6%80%A7%E8%83%BD%E6%AF%94%E8%BE%83/">
+  <meta name="author" content="John Doe" />
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="format-detection" content="telphone=no, email=no" />
+  
+    <meta name="keywords" content="" />
+  
+  <meta name="description" content="测试代码123456789101112131415161718192021222324252627282930313233343536373839404142package com.example.springtestsuanfa;import org.junit.jupiter.api.AfterEach;import org.junit.jupiter.api.BeforeEach;imp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ArrayList的removeIf和iterator.remove性能比较">
+<meta property="og:url" content="http://example.com/2021/06/22/ArrayList%E7%9A%84removeIf%E5%92%8Citerator.remove%E6%80%A7%E8%83%BD%E6%AF%94%E8%BE%83/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="测试代码123456789101112131415161718192021222324252627282930313233343536373839404142package com.example.springtestsuanfa;import org.junit.jupiter.api.AfterEach;import org.junit.jupiter.api.BeforeEach;imp">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-06-22T12:09:00.000Z">
+<meta property="article:modified_time" content="2024-11-04T02:16:30.735Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+  <!-- 样式表文件 -->
+  <link rel="stylesheet" id="kratos-css" href="/css/kr-core.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="highlight-css" href="/css/highlight/highlight.js/night-eighties.min.css" media="all"></link>
+  
+  <link rel="stylesheet" id="theme-light-css" href="/css/kr-theme/light.min.css" media="all"></link>
+  <link rel="stylesheet" id="theme-dark-css" href="/css/kr-theme/dark.min.css" media="(prefers-color-scheme: dark)"></link>
+  <script src="/js/kr-theme.min.js"></script>
+  <link rel="stylesheet" id="fontawe-css" href="/vendors/font-awesome@4.7.0/css/font-awesome.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="nprogress-css" href="/vendors/nprogress@0.2.0/nprogress.css" media="all"></link>
+  
+  
+    <link rel="stylesheet" href="/vendors/viewerjs@1.11.6/dist/viewer.min.css"></link>
+  
+  <!-- 不得不预先加载的一些JS文件 -->
+  
+    <script src="/vendors/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  
+  <!-- 自定义站点横幅和背景 -->
+  <style>
+    
+      .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+      html[data-theme="dark"] .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+    
+    
+      @media(min-width:768px) {
+        body.custom-background {
+          background-image: url('');
+        }
+        html[data-theme="dark"] body.custom-background {
+          background-image: url('');
+        }
+      }
+    
+    
+      .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+      html[data-theme="dark"] .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+    
+  </style>
+
+  <!-- 额外的追加注入项 -->
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+    <body class="custom-background">
+        <div id="kratos-wrapper">
+    <div id="kratos-page">
+        <div id="kratos-header">
+            <header id="kratos-desktop-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="nav-header">
+                        <nav id="kratos-menu-wrap">
+                            <ul id="kratos-primary-menu" class="sf-menu">
+                                
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+            <header id="kratos-mobile-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="color-logo"><a href="/">Hexo</a></div>
+                    <div id="kratos-nav-toggle-wrapper" class="nav-toggle">
+                        <a id="kratos-nav-toggle" class="kratos-nav-toggle">
+                            <i></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="kratos-start kratos-hero-2">
+            <!-- <div class="kratos-overlay"></div> -->
+            <div class="kratos-cover kratos-cover-2 text-center">
+                <div class="desc desc2 animate-box">
+                    <a href="/">
+                        <h2>Hexo</h2> <br />
+                        <span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="kratos-blog-post">
+            <div class="container">
+                <div id="main" class="row">
+
+
+        
+
+            
+
+            <section class="kr-main-col col-md-8">
+
+        
+
+            <article itemscope itemtype="https://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/06/22/ArrayList%E7%9A%84removeIf%E5%92%8Citerator.remove%E6%80%A7%E8%83%BD%E6%AF%94%E8%BE%83/">
+    <div class="kratos-hentry kratos-page-inner clearfix">
+        <header class="kratos-page-header">
+            
+                <h1 class="kratos-page-title text-center" itemprop="name headline">ArrayList的removeIf和iterator.remove性能比较</h1>
+            
+            <ul class="kratos-page-meta text-center">
+                <li><time datetime="2021-06-22T12:09:00.000Z" itemprop="datePublished"><i class="fa fa-calendar"></i> 2021-06-22</time></li>
+                <li itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <i class="fa fa-user"></i> 作者 <span itemprop="name">John Doe</span>
+                </li>
+                
+                    <li>
+                        <i class="fa fa-edit"></i> 
+                        
+                        
+                            ~4.19K
+                        
+                        字
+                    </li>
+                
+                
+                
+            </ul>
+        </header>
+        <div class="kratos-page-content kr-post">
+            
+            
+            
+            <hr />
+            <div itemprop="articleBody"><span id="more"></span>
+
+<h2 id="测试代码"><a href="#测试代码" class="headerlink" title="测试代码"></a>测试代码</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.springtestsuanfa;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.AfterEach;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.BeforeEach;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.Iterator;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ArrayListTest</span> &#123;</span><br><span class="line">    List&lt;Integer&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">    <span class="type">long</span> start;</span><br><span class="line">    <span class="meta">@BeforeEach</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">100_0000</span>; i++) &#123;</span><br><span class="line">            list.add(i);</span><br><span class="line">        &#125;</span><br><span class="line">        start = System.currentTimeMillis();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@AfterEach</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">end</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;用时:&quot;</span> + (System.currentTimeMillis() - start));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">removeArrayList</span><span class="params">()</span>&#123;</span><br><span class="line">        list.removeIf((item)-&gt;item % <span class="number">2</span> == <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span> <span class="keyword">void</span> <span class="title function_">removeIterator</span><span class="params">()</span>&#123;</span><br><span class="line">        Iterator&lt;Integer&gt; iterator = list.iterator();</span><br><span class="line">        <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">            <span class="type">Integer</span> <span class="variable">next</span> <span class="operator">=</span> iterator.next();</span><br><span class="line">            <span class="keyword">if</span> (next % <span class="number">2</span> == <span class="number">0</span>)&#123;</span><br><span class="line">                iterator.remove();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>100_0000份数据，删除一半数据<br>removeIf() 22ms<br>iterator.remove 39962ms</p>
+<h2 id="removeIf源码分析"><a href="#removeIf源码分析" class="headerlink" title="removeIf源码分析"></a>removeIf源码分析</h2><p>removeIf分为两部，先标记后整理<br>使用BitSet标记要删除的位置</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">removeIf</span><span class="params">(Predicate&lt;? <span class="built_in">super</span> E&gt; filter)</span> &#123;</span><br><span class="line">    Objects.requireNonNull(filter);</span><br><span class="line">    <span class="comment">// figure out which elements are to be removed</span></span><br><span class="line">    <span class="comment">// any exception thrown from the filter predicate at this stage</span></span><br><span class="line">    <span class="comment">// will leave the collection unmodified</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">removeCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">BitSet</span> <span class="variable">removeSet</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BitSet</span>(size);</span><br><span class="line">    <span class="keyword">final</span> <span class="type">int</span> <span class="variable">expectedModCount</span> <span class="operator">=</span> modCount;</span><br><span class="line">    <span class="keyword">final</span> <span class="type">int</span> <span class="variable">size</span> <span class="operator">=</span> <span class="built_in">this</span>.size;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>; modCount == expectedModCount &amp;&amp; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">        <span class="keyword">final</span> <span class="type">E</span> <span class="variable">element</span> <span class="operator">=</span> (E) elementData[i];</span><br><span class="line">        <span class="keyword">if</span> (filter.test(element)) &#123;</span><br><span class="line">            <span class="comment">//使用位图标记删除掉的元素</span></span><br><span class="line">            removeSet.set(i);</span><br><span class="line">            removeCount++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (modCount != expectedModCount) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// shift surviving elements left over the spaces left by removed elements</span></span><br><span class="line">    <span class="keyword">final</span> <span class="type">boolean</span> <span class="variable">anyToRemove</span> <span class="operator">=</span> removeCount &gt; <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (anyToRemove) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="type">int</span> <span class="variable">newSize</span> <span class="operator">=</span> size - removeCount;</span><br><span class="line">        <span class="comment">//整理,并将值交换，将未被删除的值覆盖掉已删除的值</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>, j=<span class="number">0</span>; (i &lt; size) &amp;&amp; (j &lt; newSize); i++, j++) &#123;</span><br><span class="line">            i = removeSet.nextClearBit(i);</span><br><span class="line">            elementData[j] = elementData[i];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//去掉引用，让gc回收掉被删除的对象</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> k=newSize; k &lt; size; k++) &#123;</span><br><span class="line">            elementData[k] = <span class="literal">null</span>;  <span class="comment">// Let gc do its work</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">this</span>.size = newSize;</span><br><span class="line">        <span class="keyword">if</span> (modCount != expectedModCount) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        modCount++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> anyToRemove;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="iterator"><a href="#iterator" class="headerlink" title="iterator"></a>iterator</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">void</span> <span class="title function_">removeIterator</span><span class="params">()</span> &#123;</span><br><span class="line">    Iterator&lt;Integer&gt; iterator = list.iterator();</span><br><span class="line">    <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">        <span class="type">Integer</span> <span class="variable">next</span> <span class="operator">=</span> iterator.next();</span><br><span class="line">        <span class="keyword">if</span> (next % <span class="number">2</span> == <span class="number">0</span>) &#123;</span><br><span class="line">            iterator.remove();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">remove</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (lastRet &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalStateException</span>();</span><br><span class="line">        checkForComodification();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//调用ArrayList的remove方法</span></span><br><span class="line">            ArrayList.<span class="built_in">this</span>.remove(lastRet);</span><br><span class="line">            <span class="comment">//设置游标的位置</span></span><br><span class="line">            cursor = lastRet;</span><br><span class="line">            lastRet = -<span class="number">1</span>;</span><br><span class="line">            expectedModCount = modCount;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IndexOutOfBoundsException ex) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ConcurrentModificationException</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> E <span class="title function_">remove</span><span class="params">(<span class="type">int</span> index)</span> &#123;</span><br><span class="line">    rangeCheck(index);</span><br><span class="line"></span><br><span class="line">    modCount++;</span><br><span class="line">    <span class="type">E</span> <span class="variable">oldValue</span> <span class="operator">=</span> elementData(index);</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> <span class="variable">numMoved</span> <span class="operator">=</span> size - index - <span class="number">1</span>;</span><br><span class="line">    <span class="comment">//数组拷贝</span></span><br><span class="line">    <span class="keyword">if</span> (numMoved &gt; <span class="number">0</span>)</span><br><span class="line">        System.arraycopy(elementData, index+<span class="number">1</span>, elementData, index,</span><br><span class="line">                         numMoved);</span><br><span class="line">    elementData[--size] = <span class="literal">null</span>; <span class="comment">// clear to let GC do its work</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> oldValue;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="时间复杂度"><a href="#时间复杂度" class="headerlink" title="时间复杂度"></a>时间复杂度</h2><p>removeIf的时间复杂度是O(n)<br>iterator.remove的时间复杂度是O(n²)</p>
+</div>
+        </div>
+        
+        <footer class="kratos-entry-footer clearfix">
+            
+            
+            
+                <div class="post-actions text-center clearfix" id="post-actions">
+                
+                    <a class="donate" href="javascript:;" onclick="krOpenDonateModal()"><i class="fa fa-bitcoin"></i> 打赏</a>
+                
+                
+                    <a class="share" href="javascript:;" onclick="krOpenShareModal()"><i class="fa fa-share-alt"></i> 分享</a>
+                
+                </div>
+            
+            <div class="footer-tag clearfix">
+                <div class="pull-left">
+                <i class="fa fa-tags"></i>
+                    
+                </div>
+                <div class="pull-date">
+                    <time datetime="2024-11-04T02:16:30.735Z" itemprop="dateModified">最后编辑：2024-11-04</time>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+        <nav class="navigation post-navigation clearfix" role="navigation">
+            
+            <div class="nav-previous clearfix">
+                <a title=" 闲着没事做，用js做了一个冒泡排序的动画" href="/2021/06/14/闲着没事做，用js做了一个冒泡排序的动画/"><i class="fa fa-angle-left"></i> 上一篇</a>
+            </div>
+            
+            
+            <div class="nav-next clearfix">
+                <a title=" Jvm内存布局和Java对象内存布局" href="/2021/07/01/Jvm内存布局和Java对象内存布局/">下一篇 <i class="fa fa-angle-right"></i></a>
+            </div>
+            
+        </nav>
+    
+    
+</article>
+
+        
+
+            </section>
+
+            
+                
+
+<section id="kratos-widget-area" class="col-md-4 hidden-xs hidden-sm">
+    <!-- 文章和页面根据splitter来分割，没有的话就从头开始设置为sticky -->
+    
+        <div class="sticky-area">
+    
+    
+    </div>
+</section>
+            
+
+        
+
+                </div>
+    </div>
+</div>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 footer-list text-center">
+                    <ul class="kratos-social-icons">
+                        
+                    </ul>
+                    <ul class="kratos-copyright">
+                        <div>
+                            <li>&copy; 2024 Hexo 版权所有.</li>
+                            <li>本站已运行<span id="kr-since">Loading...</span></li>
+                        </div>
+                        <div>
+                            <li>自豪地使用 <a href="https://github.com/Candinya/Kratos-Rebirth" target="_blank">Kratos:Rebirth</a> 主题</li>
+                            <li>站点由 John Doe 用 <i class="fa fa-heart" style="color:#d43f57"></i> 搭建</li>
+                        </div>
+                        <!-- 额外的追加注入项 -->
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="kr-tool text-center">
+            <div class="tool">
+                
+                    <div class="box search-box">
+                        <a href="/search">
+                            <span class="fa fa-search"></span>
+                        </a>
+                    </div>
+                
+                <div class="box theme-box" id="theme-toggle">
+                    <span class="fa fa-adjust"></span>
+                </div>
+            </div>
+            <div id="gotop-box" class="box gotop-box">
+                <span class="fa fa-chevron-up"></span>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+
+
+    <div id="kr-donate-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseDonateModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-bitcoin"></i>
+            </div>
+            <div class="kr-modal-title">打赏</div>
+            <button class="kr-modal-close" onclick="krCloseDonateModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-donate-message">打赏提示信息</div>
+            <div class="kr-donate-qr" id="kr-donate-qr">
+                
+            </div>
+            <div class="kr-donate-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/donate.min.js"></script>
+
+
+
+
+    <div id="kr-share-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseShareModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-share-alt"></i>
+            </div>
+            <div class="kr-modal-title">分享</div>
+            <button class="kr-modal-close" onclick="krCloseShareModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-share-message">分享提示信息</div>
+            <div class="kr-share-qr" id="kr-share-qr"></div>
+            <div class="kr-share-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/share.min.js"></script>
+
+
+
+<!-- 额外的追加注入项 -->
+
+
+        <script>
+    if (!window.kr) {
+        window.kr = {};
+    }
+    window.kr.notMobile = (!(navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    window.kr.siteRoot = "/";
+</script>
+
+
+  <script defer src="/vendors/nprogress@0.2.0/nprogress.js"></script>
+
+
+
+  <script defer src="/vendors/viewerjs@1.11.6/dist/viewer.min.js"></script>
+
+
+<script defer src="/js/kr-core.min.js"></script>
+
+
+  <script defer src="/js/kr-pjax.min.js"></script>
+
+
+<!-- 额外的追加注入项 -->
+
+
+    </body>
+</html>

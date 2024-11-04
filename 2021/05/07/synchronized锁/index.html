@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+  <!-- 元数据 -->
+  <meta charset="utf-8">
+  
+  
+  <title>synchronized锁 | Hexo</title>
+  <link rel="canonical" href="http://example.com/2021/05/07/synchronized%E9%94%81/">
+  <meta name="author" content="John Doe" />
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="format-detection" content="telphone=no, email=no" />
+  
+    <meta name="keywords" content="" />
+  
+  <meta name="description" content="synchronized的实现Java对象头synchronized用的锁是存在Java对象头里的。如果对象是数组类型，则虚拟机用3个字宽（Word）存储对象头，如果对象是非数组类型，则用2字宽存储对象头。在32位虚拟机中，1字宽等于4字节，即32bit。  Java对象头里的Mark Word里默认存储对象的HashCode、分代年龄和锁标记位。32位JVM的Mark Word的默认存储结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="synchronized锁">
+<meta property="og:url" content="http://example.com/2021/05/07/synchronized%E9%94%81/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="synchronized的实现Java对象头synchronized用的锁是存在Java对象头里的。如果对象是数组类型，则虚拟机用3个字宽（Word）存储对象头，如果对象是非数组类型，则用2字宽存储对象头。在32位虚拟机中，1字宽等于4字节，即32bit。  Java对象头里的Mark Word里默认存储对象的HashCode、分代年龄和锁标记位。32位JVM的Mark Word的默认存储结构">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://z3.ax1x.com/2021/05/07/g1ozct.png">
+<meta property="og:image" content="https://z3.ax1x.com/2021/05/07/g1TKBT.png">
+<meta property="og:image" content="https://z3.ax1x.com/2021/05/07/g1T1N4.png">
+<meta property="og:image" content="https://z3.ax1x.com/2021/05/07/g1TUu6.png">
+<meta property="og:image" content="https://z3.ax1x.com/2021/05/07/g1TD4H.png">
+<meta property="og:image" content="https://z3.ax1x.com/2021/05/07/g1T6gI.png">
+<meta property="og:image" content="https://z3.ax1x.com/2021/05/07/g1T2KP.png">
+<meta property="article:published_time" content="2021-05-07T03:39:00.000Z">
+<meta property="article:modified_time" content="2024-11-04T02:17:57.406Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://z3.ax1x.com/2021/05/07/g1ozct.png">
+  
+  <!-- 样式表文件 -->
+  <link rel="stylesheet" id="kratos-css" href="/css/kr-core.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="highlight-css" href="/css/highlight/highlight.js/night-eighties.min.css" media="all"></link>
+  
+  <link rel="stylesheet" id="theme-light-css" href="/css/kr-theme/light.min.css" media="all"></link>
+  <link rel="stylesheet" id="theme-dark-css" href="/css/kr-theme/dark.min.css" media="(prefers-color-scheme: dark)"></link>
+  <script src="/js/kr-theme.min.js"></script>
+  <link rel="stylesheet" id="fontawe-css" href="/vendors/font-awesome@4.7.0/css/font-awesome.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="nprogress-css" href="/vendors/nprogress@0.2.0/nprogress.css" media="all"></link>
+  
+  
+    <link rel="stylesheet" href="/vendors/viewerjs@1.11.6/dist/viewer.min.css"></link>
+  
+  <!-- 不得不预先加载的一些JS文件 -->
+  
+    <script src="/vendors/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  
+  <!-- 自定义站点横幅和背景 -->
+  <style>
+    
+      .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+      html[data-theme="dark"] .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+    
+    
+      @media(min-width:768px) {
+        body.custom-background {
+          background-image: url('');
+        }
+        html[data-theme="dark"] body.custom-background {
+          background-image: url('');
+        }
+      }
+    
+    
+      .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+      html[data-theme="dark"] .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+    
+  </style>
+
+  <!-- 额外的追加注入项 -->
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+    <body class="custom-background">
+        <div id="kratos-wrapper">
+    <div id="kratos-page">
+        <div id="kratos-header">
+            <header id="kratos-desktop-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="nav-header">
+                        <nav id="kratos-menu-wrap">
+                            <ul id="kratos-primary-menu" class="sf-menu">
+                                
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+            <header id="kratos-mobile-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="color-logo"><a href="/">Hexo</a></div>
+                    <div id="kratos-nav-toggle-wrapper" class="nav-toggle">
+                        <a id="kratos-nav-toggle" class="kratos-nav-toggle">
+                            <i></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="kratos-start kratos-hero-2">
+            <!-- <div class="kratos-overlay"></div> -->
+            <div class="kratos-cover kratos-cover-2 text-center">
+                <div class="desc desc2 animate-box">
+                    <a href="/">
+                        <h2>Hexo</h2> <br />
+                        <span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="kratos-blog-post">
+            <div class="container">
+                <div id="main" class="row">
+
+
+        
+
+            
+
+            <section class="kr-main-col col-md-8">
+
+        
+
+            <article itemscope itemtype="https://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/07/synchronized%E9%94%81/">
+    <div class="kratos-hentry kratos-page-inner clearfix">
+        <header class="kratos-page-header">
+            
+                <h1 class="kratos-page-title text-center" itemprop="name headline">synchronized锁</h1>
+            
+            <ul class="kratos-page-meta text-center">
+                <li><time datetime="2021-05-07T03:39:00.000Z" itemprop="datePublished"><i class="fa fa-calendar"></i> 2021-05-07</time></li>
+                <li itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <i class="fa fa-user"></i> 作者 <span itemprop="name">John Doe</span>
+                </li>
+                
+                    <li>
+                        <i class="fa fa-edit"></i> 
+                        
+                        
+                            ~2.87K
+                        
+                        字
+                    </li>
+                
+                
+                
+            </ul>
+        </header>
+        <div class="kratos-page-content kr-post">
+            
+            
+            
+            <hr />
+            <div itemprop="articleBody"><span id="more"></span>
+
+<h1 id="synchronized的实现"><a href="#synchronized的实现" class="headerlink" title="synchronized的实现"></a>synchronized的实现</h1><h2 id="Java对象头"><a href="#Java对象头" class="headerlink" title="Java对象头"></a>Java对象头</h2><p>synchronized用的锁是存在Java对象头里的。如果对象是数组类型，则虚拟机用3个字宽（Word）存储对象头，如果对象是非数组类型，则用2字宽存储对象头。在32位虚拟机中，1字宽等于4字节，即32bit。</p>
+<p><a target="_blank" rel="noopener" href="https://imgtu.com/i/g1ozct"><img src="https://z3.ax1x.com/2021/05/07/g1ozct.png" alt="g1ozct.png"></a></p>
+<p>Java对象头里的Mark Word里默认存储对象的HashCode、分代年龄和锁标记位。32位JVM的Mark Word的默认存储结构：</p>
+<p><a target="_blank" rel="noopener" href="https://imgtu.com/i/g1TKBT"><img src="https://z3.ax1x.com/2021/05/07/g1TKBT.png" alt="g1TKBT.png"></a></p>
+<p>在运行期间，Mark Word里存储的数据会随着锁标志位的变化而变化。Mark Word可能变化为存储以下4种数据：</p>
+<p><a target="_blank" rel="noopener" href="https://imgtu.com/i/g1T1N4"><img src="https://z3.ax1x.com/2021/05/07/g1T1N4.png" alt="g1T1N4.png"></a></p>
+<h2 id="锁的升级与对比"><a href="#锁的升级与对比" class="headerlink" title="锁的升级与对比"></a>锁的升级与对比</h2><p>Java SE 1.6为了减少获得锁和释放锁带来的性能消耗，引入了“偏向锁”和“轻量级锁”，在Java SE 1.6中，锁一共有4种状态，级别从低到高依次是：无锁状态、偏向锁状态、轻量级锁状态和重量级锁状态，这几个状态会随着竞争情况逐渐升级。锁可以升级但不能降级，意味着偏向锁升级成轻量级锁后不能降级成偏向锁。这种锁升级却不能降级的策略，目的是为了提高获得锁和释放锁的效率。</p>
+<h3 id="偏向锁"><a href="#偏向锁" class="headerlink" title="偏向锁"></a>偏向锁</h3><p>HotSpot的作者经过研究发现，大多数情况下，锁不仅不存在多线程竞争，而且总是由同一线程多次获得，为了让线程获得锁的代价更低而引入了偏向锁。当一个线程访问同步块并获取锁时，会在对象头和栈帧中的锁记录里存储锁偏向的线程ID，以后该线程在进入和退出同步块时不需要进行CAS操作来加锁和解锁，只需简单地测试一下对象头的Mark Word里是否存储着指向当前线程的偏向锁。如果测试成功，表示线程已经获得了锁。如果测试失败，则需要再测试一下Mark Word中偏向锁的标识是否设置成1（表示当前是偏向锁）：如果没有设置，则使用CAS竞争锁；如果设置了，则尝试使用CAS将对象头的偏向锁指向当前线程。</p>
+<ul>
+<li><p>偏向锁的撤销需要等待全局安全点，暂停持有该锁的线程，同时检查该线程是否还在执行该方法，如果是，则升级锁。反之则其他线程抢占。</p>
+</li>
+<li><p>即如果线程在全局安全点检查时，还需要使用该锁 则进行锁升级，如果线程已经不需要使用锁，并有其他线程需要使用时，将偏向锁的拥有者切换为另外线程。<br><a target="_blank" rel="noopener" href="https://imgtu.com/i/g1TUu6"><img src="https://z3.ax1x.com/2021/05/07/g1TUu6.png" alt="g1TUu6.png"></a></p>
+</li>
+</ul>
+<h3 id="轻量级锁"><a href="#轻量级锁" class="headerlink" title="轻量级锁"></a>轻量级锁</h3><p>轻量级解锁时，会使用原子的CAS操作将Displaced Mark Word替换回到对象头，如果成功，则表示没有竞争发生。如果失败，表示当前锁存在竞争，锁就会膨胀成重量级锁。<br><a target="_blank" rel="noopener" href="https://imgtu.com/i/g1TD4H"><img src="https://z3.ax1x.com/2021/05/07/g1TD4H.png" alt="g1TD4H.png"></a></p>
+<p>因为自旋会消耗CPU，为了避免无用的自旋（比如获得锁的线程被阻塞住了），一旦锁升级成重量级锁，就不会再恢复到轻量级锁状态。当锁处于这个状态下，其他线程试图获取锁时，都会被阻塞住，当持有锁的线程释放锁之后会唤醒这些线程，被唤醒的线程就会进行新一轮的夺锁之争。</p>
+<p><a target="_blank" rel="noopener" href="https://imgtu.com/i/g1T6gI"><img src="https://z3.ax1x.com/2021/05/07/g1T6gI.png" alt="g1T6gI.png"></a></p>
+<h2 id="锁的优缺点"><a href="#锁的优缺点" class="headerlink" title="锁的优缺点"></a>锁的优缺点</h2><p><a target="_blank" rel="noopener" href="https://imgtu.com/i/g1T2KP"><img src="https://z3.ax1x.com/2021/05/07/g1T2KP.png" alt="g1T2KP.png"></a></p>
+<h2 id="synchronized修饰"><a href="#synchronized修饰" class="headerlink" title="synchronized修饰"></a>synchronized修饰</h2><h3 id="修饰代码块-实例"><a href="#修饰代码块-实例" class="headerlink" title="修饰代码块(实例)"></a>修饰代码块(实例)</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span>  <span class="keyword">class</span> <span class="title class_">Test</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> i ;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">demo</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="built_in">this</span>)&#123;</span><br><span class="line">            i++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>通过javap -verbose XXX.class命令查看class文件信息来具体分析两者实现上的差异。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">public <span class="keyword">void</span> <span class="title function_">demo</span>();</span><br><span class="line">   <span class="attr">descriptor</span>: ()V</span><br><span class="line">   <span class="attr">flags</span>: <span class="variable constant_">ACC_PUBLIC</span></span><br><span class="line">   <span class="title class_">Code</span>:</span><br><span class="line">     stack=<span class="number">3</span>, locals=<span class="number">3</span>, args_size=<span class="number">1</span></span><br><span class="line">        <span class="number">0</span>: aload_0</span><br><span class="line">        <span class="number">1</span>: dup</span><br><span class="line">        <span class="number">2</span>: astore_1</span><br><span class="line">        <span class="number">3</span>: monitorenter   #进入同步代码块</span><br><span class="line">        <span class="number">4</span>: aload_0</span><br><span class="line">        <span class="number">5</span>: dup</span><br><span class="line">        <span class="number">6</span>: getfield      #<span class="number">2</span>                  <span class="comment">// Field i:I</span></span><br><span class="line">        <span class="number">9</span>: iconst_1</span><br><span class="line">       <span class="number">10</span>: iadd</span><br><span class="line">       <span class="number">11</span>: putfield      #<span class="number">2</span>                  <span class="comment">// Field i:I</span></span><br><span class="line">       <span class="number">14</span>: aload_1</span><br><span class="line">       <span class="number">15</span>: monitorexit   #正常退出同步代码块</span><br><span class="line">       <span class="number">16</span>: goto          <span class="number">24</span></span><br><span class="line">       <span class="number">19</span>: astore_2</span><br><span class="line">       <span class="number">20</span>: aload_1</span><br><span class="line">       <span class="number">21</span>: monitorexit   #异常退出同步代码块</span><br><span class="line">       <span class="number">22</span>: aload_2</span><br><span class="line">       <span class="number">23</span>: athrow</span><br><span class="line">       <span class="number">24</span>: <span class="keyword">return</span></span><br><span class="line">     <span class="title class_">Exception</span> <span class="attr">table</span>:</span><br><span class="line">        <span class="keyword">from</span>    to  target type</span><br><span class="line">            <span class="number">4</span>    <span class="number">16</span>    <span class="number">19</span>   any</span><br><span class="line">           <span class="number">19</span>    <span class="number">22</span>    <span class="number">19</span>   any</span><br></pre></td></tr></table></figure>
+
+<h3 id="修饰方法-静态方法"><a href="#修饰方法-静态方法" class="headerlink" title="修饰方法(静态方法)"></a>修饰方法(静态方法)</h3><p>class文件</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span>  <span class="keyword">class</span> <span class="title class_">Test</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> i ;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">demo</span><span class="params">()</span>&#123;</span><br><span class="line">       i++;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>汇编文件</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public synchronized <span class="keyword">void</span> <span class="title function_">demo</span>();</span><br><span class="line">    <span class="attr">descriptor</span>: ()V</span><br><span class="line">    <span class="comment">//ACC_SYNCHRONIZED 被修饰的方法为同步方法</span></span><br><span class="line">    <span class="attr">flags</span>: <span class="variable constant_">ACC_PUBLIC</span>, <span class="variable constant_">ACC_SYNCHRONIZED</span></span><br><span class="line">    <span class="title class_">Code</span>:</span><br><span class="line">      stack=<span class="number">3</span>, locals=<span class="number">1</span>, args_size=<span class="number">1</span></span><br><span class="line">         <span class="number">0</span>: aload_0</span><br><span class="line">         <span class="number">1</span>: dup</span><br><span class="line">         <span class="number">2</span>: getfield      #<span class="number">2</span>                  <span class="comment">// Field i:I</span></span><br><span class="line">         <span class="number">5</span>: iconst_1</span><br><span class="line">         <span class="number">6</span>: iadd</span><br><span class="line">         <span class="number">7</span>: putfield      #<span class="number">2</span>                  <span class="comment">// Field i:I</span></span><br><span class="line">        <span class="number">10</span>: <span class="keyword">return</span></span><br></pre></td></tr></table></figure>
+
+<p>synchronized修饰方法并没有通过插入monitorentry和monitorexit指令来实现，而是在方法表结构中的访问标志（access_flags)设置ACC_SYNCHRONIZED标志来实现。线程在执行方法前先判断access_flags是否标记ACC_SYNCHRONIZED，如果标记则在执行方法前先去获取monitor对象，获取成功则执行方法代码且执行完毕后释放monitor对象，获取失败则表示monitor对象被其他线程获取从而阻塞当前线程。</p>
+</div>
+        </div>
+        
+        <footer class="kratos-entry-footer clearfix">
+            
+            
+            
+                <div class="post-actions text-center clearfix" id="post-actions">
+                
+                    <a class="donate" href="javascript:;" onclick="krOpenDonateModal()"><i class="fa fa-bitcoin"></i> 打赏</a>
+                
+                
+                    <a class="share" href="javascript:;" onclick="krOpenShareModal()"><i class="fa fa-share-alt"></i> 分享</a>
+                
+                </div>
+            
+            <div class="footer-tag clearfix">
+                <div class="pull-left">
+                <i class="fa fa-tags"></i>
+                    
+                </div>
+                <div class="pull-date">
+                    <time datetime="2024-11-04T02:17:57.406Z" itemprop="dateModified">最后编辑：2024-11-04</time>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+        <nav class="navigation post-navigation clearfix" role="navigation">
+            
+            <div class="nav-previous clearfix">
+                <a title=" 手撸红黑树" href="/2021/05/07/手撸红黑树/"><i class="fa fa-angle-left"></i> 上一篇</a>
+            </div>
+            
+            
+            <div class="nav-next clearfix">
+                <a title=" Mybatis传入list的注意点" href="/2021/05/07/Mybatis传入list的注意点/">下一篇 <i class="fa fa-angle-right"></i></a>
+            </div>
+            
+        </nav>
+    
+    
+</article>
+
+        
+
+            </section>
+
+            
+                
+
+<section id="kratos-widget-area" class="col-md-4 hidden-xs hidden-sm">
+    <!-- 文章和页面根据splitter来分割，没有的话就从头开始设置为sticky -->
+    
+        <div class="sticky-area">
+    
+    
+    </div>
+</section>
+            
+
+        
+
+                </div>
+    </div>
+</div>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 footer-list text-center">
+                    <ul class="kratos-social-icons">
+                        
+                    </ul>
+                    <ul class="kratos-copyright">
+                        <div>
+                            <li>&copy; 2024 Hexo 版权所有.</li>
+                            <li>本站已运行<span id="kr-since">Loading...</span></li>
+                        </div>
+                        <div>
+                            <li>自豪地使用 <a href="https://github.com/Candinya/Kratos-Rebirth" target="_blank">Kratos:Rebirth</a> 主题</li>
+                            <li>站点由 John Doe 用 <i class="fa fa-heart" style="color:#d43f57"></i> 搭建</li>
+                        </div>
+                        <!-- 额外的追加注入项 -->
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="kr-tool text-center">
+            <div class="tool">
+                
+                    <div class="box search-box">
+                        <a href="/search">
+                            <span class="fa fa-search"></span>
+                        </a>
+                    </div>
+                
+                <div class="box theme-box" id="theme-toggle">
+                    <span class="fa fa-adjust"></span>
+                </div>
+            </div>
+            <div id="gotop-box" class="box gotop-box">
+                <span class="fa fa-chevron-up"></span>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+
+
+    <div id="kr-donate-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseDonateModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-bitcoin"></i>
+            </div>
+            <div class="kr-modal-title">打赏</div>
+            <button class="kr-modal-close" onclick="krCloseDonateModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-donate-message">打赏提示信息</div>
+            <div class="kr-donate-qr" id="kr-donate-qr">
+                
+            </div>
+            <div class="kr-donate-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/donate.min.js"></script>
+
+
+
+
+    <div id="kr-share-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseShareModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-share-alt"></i>
+            </div>
+            <div class="kr-modal-title">分享</div>
+            <button class="kr-modal-close" onclick="krCloseShareModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-share-message">分享提示信息</div>
+            <div class="kr-share-qr" id="kr-share-qr"></div>
+            <div class="kr-share-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/share.min.js"></script>
+
+
+
+<!-- 额外的追加注入项 -->
+
+
+        <script>
+    if (!window.kr) {
+        window.kr = {};
+    }
+    window.kr.notMobile = (!(navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    window.kr.siteRoot = "/";
+</script>
+
+
+  <script defer src="/vendors/nprogress@0.2.0/nprogress.js"></script>
+
+
+
+  <script defer src="/vendors/viewerjs@1.11.6/dist/viewer.min.js"></script>
+
+
+<script defer src="/js/kr-core.min.js"></script>
+
+
+  <script defer src="/js/kr-pjax.min.js"></script>
+
+
+<!-- 额外的追加注入项 -->
+
+
+    </body>
+</html>

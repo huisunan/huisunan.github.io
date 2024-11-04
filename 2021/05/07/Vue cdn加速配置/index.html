@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+  <!-- 元数据 -->
+  <meta charset="utf-8">
+  
+  
+  <title>Vue cdn加速配置 | Hexo</title>
+  <link rel="canonical" href="http://example.com/2021/05/07/Vue%20cdn%E5%8A%A0%E9%80%9F%E9%85%8D%E7%BD%AE/">
+  <meta name="author" content="John Doe" />
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="format-detection" content="telphone=no, email=no" />
+  
+    <meta name="keywords" content="" />
+  
+  <meta name="description" content="引入CDN12345678&lt;script src&#x3D;&quot;https:&#x2F;&#x2F;cdn.bootcdn.net&#x2F;ajax&#x2F;libs&#x2F;vue&#x2F;2.6.10&#x2F;vue.min.js&quot;&gt;&lt;&#x2F;script&gt;&lt;script src&#x3D;&quot;https:&#x2F;&#x2F;cdn.bootcdn.net&#x2F;ajax&#x2F;libs&#x2F;vue-router&#x2F;3.0.6&#x2F;vue-router.m">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue cdn加速配置">
+<meta property="og:url" content="http://example.com/2021/05/07/Vue%20cdn%E5%8A%A0%E9%80%9F%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="引入CDN12345678&lt;script src&#x3D;&quot;https:&#x2F;&#x2F;cdn.bootcdn.net&#x2F;ajax&#x2F;libs&#x2F;vue&#x2F;2.6.10&#x2F;vue.min.js&quot;&gt;&lt;&#x2F;script&gt;&lt;script src&#x3D;&quot;https:&#x2F;&#x2F;cdn.bootcdn.net&#x2F;ajax&#x2F;libs&#x2F;vue-router&#x2F;3.0.6&#x2F;vue-router.m">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-05-07T03:34:00.000Z">
+<meta property="article:modified_time" content="2024-11-04T02:16:30.736Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+  <!-- 样式表文件 -->
+  <link rel="stylesheet" id="kratos-css" href="/css/kr-core.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="highlight-css" href="/css/highlight/highlight.js/night-eighties.min.css" media="all"></link>
+  
+  <link rel="stylesheet" id="theme-light-css" href="/css/kr-theme/light.min.css" media="all"></link>
+  <link rel="stylesheet" id="theme-dark-css" href="/css/kr-theme/dark.min.css" media="(prefers-color-scheme: dark)"></link>
+  <script src="/js/kr-theme.min.js"></script>
+  <link rel="stylesheet" id="fontawe-css" href="/vendors/font-awesome@4.7.0/css/font-awesome.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="nprogress-css" href="/vendors/nprogress@0.2.0/nprogress.css" media="all"></link>
+  
+  
+    <link rel="stylesheet" href="/vendors/viewerjs@1.11.6/dist/viewer.min.css"></link>
+  
+  <!-- 不得不预先加载的一些JS文件 -->
+  
+    <script src="/vendors/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  
+  <!-- 自定义站点横幅和背景 -->
+  <style>
+    
+      .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+      html[data-theme="dark"] .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+    
+    
+      @media(min-width:768px) {
+        body.custom-background {
+          background-image: url('');
+        }
+        html[data-theme="dark"] body.custom-background {
+          background-image: url('');
+        }
+      }
+    
+    
+      .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+      html[data-theme="dark"] .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+    
+  </style>
+
+  <!-- 额外的追加注入项 -->
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+    <body class="custom-background">
+        <div id="kratos-wrapper">
+    <div id="kratos-page">
+        <div id="kratos-header">
+            <header id="kratos-desktop-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="nav-header">
+                        <nav id="kratos-menu-wrap">
+                            <ul id="kratos-primary-menu" class="sf-menu">
+                                
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+            <header id="kratos-mobile-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="color-logo"><a href="/">Hexo</a></div>
+                    <div id="kratos-nav-toggle-wrapper" class="nav-toggle">
+                        <a id="kratos-nav-toggle" class="kratos-nav-toggle">
+                            <i></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="kratos-start kratos-hero-2">
+            <!-- <div class="kratos-overlay"></div> -->
+            <div class="kratos-cover kratos-cover-2 text-center">
+                <div class="desc desc2 animate-box">
+                    <a href="/">
+                        <h2>Hexo</h2> <br />
+                        <span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="kratos-blog-post">
+            <div class="container">
+                <div id="main" class="row">
+
+
+        
+
+            
+
+            <section class="kr-main-col col-md-8">
+
+        
+
+            <article itemscope itemtype="https://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/07/Vue%20cdn%E5%8A%A0%E9%80%9F%E9%85%8D%E7%BD%AE/">
+    <div class="kratos-hentry kratos-page-inner clearfix">
+        <header class="kratos-page-header">
+            
+                <h1 class="kratos-page-title text-center" itemprop="name headline">Vue cdn加速配置</h1>
+            
+            <ul class="kratos-page-meta text-center">
+                <li><time datetime="2021-05-07T03:34:00.000Z" itemprop="datePublished"><i class="fa fa-calendar"></i> 2021-05-07</time></li>
+                <li itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <i class="fa fa-user"></i> 作者 <span itemprop="name">John Doe</span>
+                </li>
+                
+                    <li>
+                        <i class="fa fa-edit"></i> 
+                        
+                        
+                            ~1.93K
+                        
+                        字
+                    </li>
+                
+                
+                
+            </ul>
+        </header>
+        <div class="kratos-page-content kr-post">
+            
+            
+            
+            <hr />
+            <div itemprop="articleBody"><span id="more"></span>
+
+<h2 id="引入CDN"><a href="#引入CDN" class="headerlink" title="引入CDN"></a>引入CDN</h2><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/vue/2.6.10/vue.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/vue-router/3.0.6/vue-router.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/vuex/3.1.0/vuex.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/axios/0.18.1/axios.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/element-ui/2.13.0/index.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/js-cookie/2.2.0/js.cookie.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/nprogress/0.2.0/nprogress.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">href</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/element-ui/2.13.0/theme-chalk/index.css&quot;</span> <span class="attr">rel</span>=<span class="string">&quot;stylesheet&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="配置vue-config-js"><a href="#配置vue-config-js" class="headerlink" title="配置vue.config.js"></a>配置vue.config.js</h2><p>在module.exports中引入的cdn不需要打包</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">configureWebpack</span>: &#123;</span><br><span class="line">    <span class="attr">name</span>: name,</span><br><span class="line">    <span class="attr">resolve</span>: &#123;</span><br><span class="line">      <span class="attr">alias</span>: &#123;</span><br><span class="line">        <span class="string">&#x27;@&#x27;</span>: <span class="title function_">resolve</span>(<span class="string">&#x27;src&#x27;</span>)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="comment">//此处就是</span></span><br><span class="line">    <span class="attr">externals</span>:&#123;</span><br><span class="line">      <span class="string">&#x27;vue&#x27;</span>: <span class="string">&#x27;Vue&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;vue-router&#x27;</span>: <span class="string">&#x27;VueRouter&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;vuex&#x27;</span>: <span class="string">&#x27;Vuex&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;axios&#x27;</span>: <span class="string">&#x27;axios&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;element-ui&#x27;</span>:<span class="string">&#x27;ELEMENT&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;js-cookie&#x27;</span>:<span class="string">&#x27;Cookies&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;nprogress&#x27;</span>:<span class="string">&#x27;NProgress&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="将import到的地方都要注释掉"><a href="#将import到的地方都要注释掉" class="headerlink" title="将import到的地方都要注释掉"></a>将import到的地方都要注释掉</h2><p>store里的</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*import Vue from &#x27;vue&#x27;</span></span><br><span class="line"><span class="comment">import Vuex from &#x27;vuex&#x27;*/</span></span><br></pre></td></tr></table></figure>
+
+<p>router里的 文件里面的Router需要替换成VueRouter</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*import Vue from &#x27;vue&#x27;</span></span><br><span class="line"><span class="comment">import Router from &#x27;vue-router&#x27;*/</span></span><br><span class="line"><span class="title class_">Vue</span>.<span class="title function_">use</span>(<span class="title class_">VueRouter</span>)</span><br><span class="line"><span class="keyword">const</span> <span class="title function_">createRouter</span> = (<span class="params"></span>) =&gt; <span class="keyword">new</span> <span class="title class_">VueRouter</span>(&#123;</span><br><span class="line">  <span class="comment">// mode: &#x27;history&#x27;, // require service support</span></span><br><span class="line">  <span class="attr">scrollBehavior</span>: <span class="function">() =&gt;</span> (&#123; <span class="attr">y</span>: <span class="number">0</span> &#125;),</span><br><span class="line">  <span class="attr">routes</span>: constantRoutes</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>同理，引用的js都要把import去除掉</p>
+</div>
+        </div>
+        
+        <footer class="kratos-entry-footer clearfix">
+            
+            
+            
+                <div class="post-actions text-center clearfix" id="post-actions">
+                
+                    <a class="donate" href="javascript:;" onclick="krOpenDonateModal()"><i class="fa fa-bitcoin"></i> 打赏</a>
+                
+                
+                    <a class="share" href="javascript:;" onclick="krOpenShareModal()"><i class="fa fa-share-alt"></i> 分享</a>
+                
+                </div>
+            
+            <div class="footer-tag clearfix">
+                <div class="pull-left">
+                <i class="fa fa-tags"></i>
+                    
+                </div>
+                <div class="pull-date">
+                    <time datetime="2024-11-04T02:16:30.736Z" itemprop="dateModified">最后编辑：2024-11-04</time>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+        <nav class="navigation post-navigation clearfix" role="navigation">
+            
+            <div class="nav-previous clearfix">
+                <a title=" 多线程之BlockingQueue中 take、offer、put、add的一些比较" href="/2021/05/07/多线程之BlockingQueue中 take、offer、put、add的一些比较/"><i class="fa fa-angle-left"></i> 上一篇</a>
+            </div>
+            
+            
+            <div class="nav-next clearfix">
+                <a title=" 手撸红黑树" href="/2021/05/07/手撸红黑树/">下一篇 <i class="fa fa-angle-right"></i></a>
+            </div>
+            
+        </nav>
+    
+    
+</article>
+
+        
+
+            </section>
+
+            
+                
+
+<section id="kratos-widget-area" class="col-md-4 hidden-xs hidden-sm">
+    <!-- 文章和页面根据splitter来分割，没有的话就从头开始设置为sticky -->
+    
+        <div class="sticky-area">
+    
+    
+    </div>
+</section>
+            
+
+        
+
+                </div>
+    </div>
+</div>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 footer-list text-center">
+                    <ul class="kratos-social-icons">
+                        
+                    </ul>
+                    <ul class="kratos-copyright">
+                        <div>
+                            <li>&copy; 2024 Hexo 版权所有.</li>
+                            <li>本站已运行<span id="kr-since">Loading...</span></li>
+                        </div>
+                        <div>
+                            <li>自豪地使用 <a href="https://github.com/Candinya/Kratos-Rebirth" target="_blank">Kratos:Rebirth</a> 主题</li>
+                            <li>站点由 John Doe 用 <i class="fa fa-heart" style="color:#d43f57"></i> 搭建</li>
+                        </div>
+                        <!-- 额外的追加注入项 -->
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="kr-tool text-center">
+            <div class="tool">
+                
+                    <div class="box search-box">
+                        <a href="/search">
+                            <span class="fa fa-search"></span>
+                        </a>
+                    </div>
+                
+                <div class="box theme-box" id="theme-toggle">
+                    <span class="fa fa-adjust"></span>
+                </div>
+            </div>
+            <div id="gotop-box" class="box gotop-box">
+                <span class="fa fa-chevron-up"></span>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+
+
+    <div id="kr-donate-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseDonateModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-bitcoin"></i>
+            </div>
+            <div class="kr-modal-title">打赏</div>
+            <button class="kr-modal-close" onclick="krCloseDonateModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-donate-message">打赏提示信息</div>
+            <div class="kr-donate-qr" id="kr-donate-qr">
+                
+            </div>
+            <div class="kr-donate-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/donate.min.js"></script>
+
+
+
+
+    <div id="kr-share-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseShareModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-share-alt"></i>
+            </div>
+            <div class="kr-modal-title">分享</div>
+            <button class="kr-modal-close" onclick="krCloseShareModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-share-message">分享提示信息</div>
+            <div class="kr-share-qr" id="kr-share-qr"></div>
+            <div class="kr-share-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/share.min.js"></script>
+
+
+
+<!-- 额外的追加注入项 -->
+
+
+        <script>
+    if (!window.kr) {
+        window.kr = {};
+    }
+    window.kr.notMobile = (!(navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    window.kr.siteRoot = "/";
+</script>
+
+
+  <script defer src="/vendors/nprogress@0.2.0/nprogress.js"></script>
+
+
+
+  <script defer src="/vendors/viewerjs@1.11.6/dist/viewer.min.js"></script>
+
+
+<script defer src="/js/kr-core.min.js"></script>
+
+
+  <script defer src="/js/kr-pjax.min.js"></script>
+
+
+<!-- 额外的追加注入项 -->
+
+
+    </body>
+</html>

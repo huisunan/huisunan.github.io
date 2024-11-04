@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+  <!-- 元数据 -->
+  <meta charset="utf-8">
+  
+  
+  <title>通过代理的方式实现对httpClient的监控,超时回调 | Hexo</title>
+  <link rel="canonical" href="http://example.com/2021/05/21/%E9%80%9A%E8%BF%87%E4%BB%A3%E7%90%86%E7%9A%84%E6%96%B9%E5%BC%8F%E5%AE%9E%E7%8E%B0%E5%AF%B9httpClient%E7%9A%84%E7%9B%91%E6%8E%A7,%E8%B6%85%E6%97%B6%E5%9B%9E%E8%B0%83/">
+  <meta name="author" content="John Doe" />
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="format-detection" content="telphone=no, email=no" />
+  
+    <meta name="keywords" content="" />
+  
+  <meta name="description" content="通过代理的方式实现对httpClient的监控,超时回调 实现的功能 1.记录请求时间2.记录请求内容3.简化回调4.重时重试功能  通过静态代理的方式实现 代理类12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过代理的方式实现对httpClient的监控,超时回调">
+<meta property="og:url" content="http://example.com/2021/05/21/%E9%80%9A%E8%BF%87%E4%BB%A3%E7%90%86%E7%9A%84%E6%96%B9%E5%BC%8F%E5%AE%9E%E7%8E%B0%E5%AF%B9httpClient%E7%9A%84%E7%9B%91%E6%8E%A7,%E8%B6%85%E6%97%B6%E5%9B%9E%E8%B0%83/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="通过代理的方式实现对httpClient的监控,超时回调 实现的功能 1.记录请求时间2.记录请求内容3.简化回调4.重时重试功能  通过静态代理的方式实现 代理类12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-05-21T07:53:00.000Z">
+<meta property="article:modified_time" content="2024-11-04T02:16:30.735Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+  <!-- 样式表文件 -->
+  <link rel="stylesheet" id="kratos-css" href="/css/kr-core.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="highlight-css" href="/css/highlight/highlight.js/night-eighties.min.css" media="all"></link>
+  
+  <link rel="stylesheet" id="theme-light-css" href="/css/kr-theme/light.min.css" media="all"></link>
+  <link rel="stylesheet" id="theme-dark-css" href="/css/kr-theme/dark.min.css" media="(prefers-color-scheme: dark)"></link>
+  <script src="/js/kr-theme.min.js"></script>
+  <link rel="stylesheet" id="fontawe-css" href="/vendors/font-awesome@4.7.0/css/font-awesome.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="nprogress-css" href="/vendors/nprogress@0.2.0/nprogress.css" media="all"></link>
+  
+  
+    <link rel="stylesheet" href="/vendors/viewerjs@1.11.6/dist/viewer.min.css"></link>
+  
+  <!-- 不得不预先加载的一些JS文件 -->
+  
+    <script src="/vendors/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  
+  <!-- 自定义站点横幅和背景 -->
+  <style>
+    
+      .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+      html[data-theme="dark"] .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+    
+    
+      @media(min-width:768px) {
+        body.custom-background {
+          background-image: url('');
+        }
+        html[data-theme="dark"] body.custom-background {
+          background-image: url('');
+        }
+      }
+    
+    
+      .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+      html[data-theme="dark"] .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+    
+  </style>
+
+  <!-- 额外的追加注入项 -->
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+    <body class="custom-background">
+        <div id="kratos-wrapper">
+    <div id="kratos-page">
+        <div id="kratos-header">
+            <header id="kratos-desktop-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="nav-header">
+                        <nav id="kratos-menu-wrap">
+                            <ul id="kratos-primary-menu" class="sf-menu">
+                                
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+            <header id="kratos-mobile-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="color-logo"><a href="/">Hexo</a></div>
+                    <div id="kratos-nav-toggle-wrapper" class="nav-toggle">
+                        <a id="kratos-nav-toggle" class="kratos-nav-toggle">
+                            <i></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="kratos-start kratos-hero-2">
+            <!-- <div class="kratos-overlay"></div> -->
+            <div class="kratos-cover kratos-cover-2 text-center">
+                <div class="desc desc2 animate-box">
+                    <a href="/">
+                        <h2>Hexo</h2> <br />
+                        <span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="kratos-blog-post">
+            <div class="container">
+                <div id="main" class="row">
+
+
+        
+
+            
+
+            <section class="kr-main-col col-md-8">
+
+        
+
+            <article itemscope itemtype="https://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/21/%E9%80%9A%E8%BF%87%E4%BB%A3%E7%90%86%E7%9A%84%E6%96%B9%E5%BC%8F%E5%AE%9E%E7%8E%B0%E5%AF%B9httpClient%E7%9A%84%E7%9B%91%E6%8E%A7,%E8%B6%85%E6%97%B6%E5%9B%9E%E8%B0%83/">
+    <div class="kratos-hentry kratos-page-inner clearfix">
+        <header class="kratos-page-header">
+            
+                <h1 class="kratos-page-title text-center" itemprop="name headline">通过代理的方式实现对httpClient的监控,超时回调</h1>
+            
+            <ul class="kratos-page-meta text-center">
+                <li><time datetime="2021-05-21T07:53:00.000Z" itemprop="datePublished"><i class="fa fa-calendar"></i> 2021-05-21</time></li>
+                <li itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <i class="fa fa-user"></i> 作者 <span itemprop="name">John Doe</span>
+                </li>
+                
+                    <li>
+                        <i class="fa fa-edit"></i> 
+                        
+                        
+                            ~14.70K
+                        
+                        字
+                    </li>
+                
+                
+                
+            </ul>
+        </header>
+        <div class="kratos-page-content kr-post">
+            
+            
+            
+            <hr />
+            <div itemprop="articleBody"><span id="more"></span>
+
+<h1 id="通过代理的方式实现对httpClient的监控-超时回调"><a href="#通过代理的方式实现对httpClient的监控-超时回调" class="headerlink" title="通过代理的方式实现对httpClient的监控,超时回调"></a>通过代理的方式实现对httpClient的监控,超时回调</h1><blockquote>
+<p>实现的功能</p>
+<p>1.记录请求时间<br>2.记录请求内容<br>3.简化回调<br>4.重时重试功能</p>
+</blockquote>
+<p>通过静态代理的方式实现</p>
+<h2 id="代理类"><a href="#代理类" class="headerlink" title="代理类"></a>代理类</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 1.记录请求时间</span></span><br><span class="line"><span class="comment"> * 2.记录请求内容</span></span><br><span class="line"><span class="comment"> * 3.简化回调</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RetryFutureProxy</span> <span class="keyword">implements</span> <span class="title class_">FutureCallback</span>&lt;HttpResponse&gt;, RetryFutureCallBack &#123;</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">requestLogger</span> <span class="operator">=</span> LoggerFactory.getLogger(<span class="string">&quot;requestLogger&quot;</span>);</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 已重试次数</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="type">int</span> <span class="variable">retryUse</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 总重试次数</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="type">int</span> retryCount;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 请求</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> HttpUriRequest request;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 日志体</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> RequestLogEntity requestLogEntity;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 当前重试</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> RequestLogEntity nowRetryEntity;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//回调接口</span></span><br><span class="line">    <span class="keyword">protected</span> RetryFutureCallBack callBack;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RetryFutureProxy</span><span class="params">(HttpUriRequest request)</span>&#123;</span><br><span class="line">        <span class="built_in">this</span>(request,<span class="keyword">new</span> <span class="title class_">EmptyRetryFutureCallBack</span>());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 默认为不重试的请求</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> request 请求体</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RetryFutureProxy</span><span class="params">(HttpUriRequest request, RetryFutureCallBack callBack)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>(-<span class="number">1</span>, request,callBack);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> count   重试次数</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> request 请求</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RetryFutureProxy</span><span class="params">(<span class="type">int</span> count, HttpUriRequest request, RetryFutureCallBack callBack)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.callBack = callBack;</span><br><span class="line">        <span class="built_in">this</span>.retryCount = count;</span><br><span class="line">        <span class="built_in">this</span>.request = request;</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity = <span class="keyword">new</span> <span class="title class_">RequestLogEntity</span>();</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setStartTime(<span class="keyword">new</span> <span class="title class_">Date</span>());</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.generateUrlInfo(request.getURI().toString());</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setStatus(RequestEnum.FAIL);</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setRetryCount(<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (retryCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="built_in">this</span>.requestLogEntity.setRetryList(<span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">//记录请求结果和打印日志</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">logEndAndPrint</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        requestLogEntity.setUseTime(requestLogEntity.getEndTime().getTime() - requestLogEntity.getStartTime().getTime());</span><br><span class="line">        requestLogEntity.setResult(result);</span><br><span class="line">        log.info(<span class="string">&quot;&#123;&#125;请求总用时:&#123;&#125;ms&quot;</span>, requestLogEntity.getUrl(), requestLogEntity.getUseTime());</span><br><span class="line">        requestLogger.info(JacksonUtil.toJson(requestLogEntity));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">//记录成功时的日志信息</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doSuccess</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setEndTime(<span class="keyword">new</span> <span class="title class_">Date</span>());</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setStatus(RequestEnum.SUCCESS);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//自定义回调</span></span><br><span class="line">            success(result);</span><br><span class="line">			<span class="comment">//处理请求</span></span><br><span class="line">            handleRetryEntity(RequestEnum.SUCCESS);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="built_in">this</span>.requestLogEntity.setStatus(RequestEnum.FAIL);</span><br><span class="line">            handleRetryEntity(RequestEnum.FAIL);</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125;<span class="keyword">finally</span> &#123;</span><br><span class="line">            logEndAndPrint(result);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="comment">//记录失败时的信息</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFail</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setEndTime(<span class="keyword">new</span> <span class="title class_">Date</span>());</span><br><span class="line">        handleRetryEntity(RequestEnum.FAIL);</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setStatus(RequestEnum.FAIL);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//失败回调</span></span><br><span class="line">            fail(result);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            logEndAndPrint(result);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">   </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFail</span><span class="params">()</span> &#123;</span><br><span class="line">        doFail(<span class="literal">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//HttpClinet FutureCallback的回调</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">completed</span><span class="params">(HttpResponse result)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">HttpEntity</span> <span class="variable">entity</span> <span class="operator">=</span> result.getEntity();</span><br><span class="line">            <span class="type">String</span> <span class="variable">string</span> <span class="operator">=</span> EntityUtils.toString(entity);</span><br><span class="line">            <span class="comment">//自定义错误处理,以&lt;html&gt; 开头则为nginx失败页面</span></span><br><span class="line">            <span class="keyword">if</span> (HttpUtil.isError(string)) &#123;</span><br><span class="line">                doFail(string);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                doSuccess(string);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            log.error(<span class="string">&quot;completed error&quot;</span>, e);</span><br><span class="line">            doFail();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">//日志处理 填入请求结束时间，请求用时等数据</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">handleRetryEntity</span><span class="params">(RequestEnum requestEnum)</span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">this</span>.nowRetryEntity != <span class="literal">null</span>)&#123;</span><br><span class="line">            <span class="built_in">this</span>.nowRetryEntity.setEndTime(<span class="keyword">new</span> <span class="title class_">Date</span>());</span><br><span class="line">            <span class="built_in">this</span>.nowRetryEntity.setUseTime(<span class="built_in">this</span>.nowRetryEntity.getEndTime().getTime() - <span class="built_in">this</span>.nowRetryEntity.getStartTime().getTime());</span><br><span class="line">            <span class="built_in">this</span>.nowRetryEntity.setStatus(requestEnum);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//失败重试</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">doRetry</span><span class="params">()</span> &#123;</span><br><span class="line">        handleRetryEntity(RequestEnum.FAIL);</span><br><span class="line">        retryUse++;</span><br><span class="line">        <span class="type">RequestLogEntity</span> <span class="variable">retryEntity</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RequestLogEntity</span>();</span><br><span class="line">        retryEntity.setStartTime(<span class="keyword">new</span> <span class="title class_">Date</span>());</span><br><span class="line">        retryEntity.setRetryCount(retryUse);</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.getRetryList().add(retryEntity);</span><br><span class="line">        <span class="built_in">this</span>.requestLogEntity.setRetryCount(retryUse);</span><br><span class="line">        <span class="built_in">this</span>.nowRetryEntity = retryEntity;</span><br><span class="line"></span><br><span class="line">        log.info(<span class="string">&quot;&#123;&#125;超时重试第&#123;&#125;次&quot;</span>, request.getURI().toString(), retryUse);</span><br><span class="line">        HttpUtil.asyncExecute(request, <span class="built_in">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">failed</span><span class="params">(Exception ex)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (ex <span class="keyword">instanceof</span> SocketTimeoutException &amp;&amp; retryUse &lt; retryCount &amp;&amp; retryCount != -<span class="number">1</span>) &#123;</span><br><span class="line">            <span class="comment">//超时并且总请求次数小于3，执行重试</span></span><br><span class="line">            doRetry();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            ex.printStackTrace();</span><br><span class="line">            <span class="comment">//超时后的异常处理</span></span><br><span class="line">            doFail();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//按失败处理</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">cancelled</span><span class="params">()</span> &#123;</span><br><span class="line">        doFail();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//调用实现类的success的方法</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">success</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        callBack.success(result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//调用实现类的fail的方法</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">fail</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        callBack.fail(result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> HttpUriRequest <span class="title function_">getRequest</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> request;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="简化的回调接口"><a href="#简化的回调接口" class="headerlink" title="简化的回调接口"></a>简化的回调接口</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">RetryFutureCallBack</span> &#123;</span><br><span class="line">    <span class="comment">//成功回调</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">success</span><span class="params">(String result)</span>;</span><br><span class="line">    <span class="comment">//失败回调</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">fail</span><span class="params">(String result)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="不通过回调，通过阻塞的方式获取结果"><a href="#不通过回调，通过阻塞的方式获取结果" class="headerlink" title="不通过回调，通过阻塞的方式获取结果"></a>不通过回调，通过阻塞的方式获取结果</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">EmptyRetryFutureCallBack</span> <span class="keyword">implements</span> <span class="title class_">RetryFutureCallBack</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> String result;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="type">boolean</span> completed;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> String <span class="title function_">getResult</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="keyword">while</span> (!completed) &#123;</span><br><span class="line">            <span class="comment">//超时等待3s</span></span><br><span class="line">            wait(<span class="number">1000</span> * <span class="number">3</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">handleResult</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.completed = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">this</span>.result = result;</span><br><span class="line">        notifyAll();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">success</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        handleResult(result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">fail</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        handleResult(result);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="日志类"><a href="#日志类" class="headerlink" title="日志类"></a>日志类</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RequestLogEntity</span> &#123;</span><br><span class="line">    <span class="comment">//请求开始时间</span></span><br><span class="line">    <span class="meta">@JsonFormat(pattern = &quot;yyyy-MM-dd HH:mm:ss&quot;, timezone = &quot;GMT+8&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> Date startTime;</span><br><span class="line">    <span class="comment">//请求结束时间</span></span><br><span class="line">    <span class="meta">@JsonFormat(pattern = &quot;yyyy-MM-dd HH:mm:ss&quot;, timezone = &quot;GMT+8&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> Date endTime;</span><br><span class="line">   	<span class="comment">//用时ms</span></span><br><span class="line">    <span class="keyword">private</span> Long useTime;</span><br><span class="line">    <span class="comment">//请求域名或者主机ip</span></span><br><span class="line">    <span class="keyword">private</span> String host;</span><br><span class="line">    <span class="comment">//请求url参数</span></span><br><span class="line">    <span class="keyword">private</span> Map&lt;String, Object&gt; params;</span><br><span class="line">    <span class="meta">@JsonIgnore</span></span><br><span class="line">    <span class="comment">//请求url</span></span><br><span class="line">    <span class="keyword">private</span> String url;</span><br><span class="line">    <span class="comment">//请求结果</span></span><br><span class="line">    <span class="keyword">private</span> String result;</span><br><span class="line">    <span class="comment">//重试次数</span></span><br><span class="line">    <span class="keyword">private</span> Integer retryCount;</span><br><span class="line">    <span class="comment">//解析数据后，数据的结果集大小</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> resultSize;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 状态</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> RequestEnum status;</span><br><span class="line">    <span class="keyword">private</span> List&lt;RequestLogEntity&gt; retryList;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">generateUrlInfo</span><span class="params">(String url)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.url = url;</span><br><span class="line">        <span class="comment">//获取host</span></span><br><span class="line">        <span class="keyword">if</span> (StringUtils.isBlank(url))</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            String[] split = StringUtils.split(url, <span class="string">&quot;?&quot;</span>);</span><br><span class="line">            <span class="keyword">if</span> (split == <span class="literal">null</span>)</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            <span class="keyword">if</span> (split.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="built_in">this</span>.host = split[<span class="number">0</span>];</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (split.length &gt; <span class="number">1</span>) &#123;</span><br><span class="line">                generateParam(split[<span class="number">1</span>]);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            log.warn(<span class="string">&quot;解析url失败&quot;</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">generateParam</span><span class="params">(String paramString)</span> &#123;</span><br><span class="line">        String[] split = StringUtils.split(paramString, <span class="string">&quot;&amp;&quot;</span>);</span><br><span class="line">        <span class="built_in">this</span>.params = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">        <span class="keyword">for</span> (String item : split) &#123;</span><br><span class="line">            String[] itemSplit = StringUtils.split(item, <span class="string">&quot;=&quot;</span>);</span><br><span class="line">            <span class="keyword">if</span> (itemSplit == <span class="literal">null</span> || itemSplit.length == <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            <span class="built_in">this</span>.params.put(itemSplit[<span class="number">0</span>], itemSplit.length == <span class="number">2</span> ? itemSplit[<span class="number">1</span>] : <span class="string">&quot;&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="自定义回调类实现"><a href="#自定义回调类实现" class="headerlink" title="自定义回调类实现"></a>自定义回调类实现</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Sl4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">MyCallBack</span> <span class="keyword">implements</span> <span class="title class_">RetryFutureCallBack</span> &#123;</span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">success</span><span class="params">(String result)</span> &#123;</span><br><span class="line">       	log.info(<span class="string">&quot;成功请求结果:&#123;&#125;&quot;</span>,result);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">fail</span><span class="params">(String result)</span>&#123;</span><br><span class="line">        log.error(<span class="string">&quot;请求失败结果:&#123;&#125;&quot;</span>,result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="HttpUtil类"><a href="#HttpUtil类" class="headerlink" title="HttpUtil类"></a>HttpUtil类</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HttpUtil</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">APPLICATION_JSON</span> <span class="operator">=</span> <span class="string">&quot;application/json&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">CONTENT_TYPE_FORM_URL</span> <span class="operator">=</span> <span class="string">&quot;application/x-www-form-urlencoded&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> <span class="type">CloseableHttpAsyncClient</span> <span class="variable">client</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">PoolingHttpClientConnectionManager</span> <span class="variable">connectionManager</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PoolingHttpClientConnectionManager</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// setConnectTimeout表示设置建立连接的超时时间</span></span><br><span class="line">    <span class="comment">// setConnectionRequestTimeout表示从连接池中拿连接的等待超时时间</span></span><br><span class="line">    <span class="comment">// setSocketTimeout表示发出请求后等待对端应答的超时时间</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">CONNECT_TIMEOUT</span> <span class="operator">=</span> <span class="number">3_000</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">CONNECTION_REQUEST_TIMEOUT</span> <span class="operator">=</span> <span class="number">3_000</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">SOCKET_TIMEOUT</span> <span class="operator">=</span> <span class="number">3_000</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">RequestConfig</span> <span class="variable">requestConfig</span> <span class="operator">=</span> RequestConfig</span><br><span class="line">            .custom()</span><br><span class="line">            .setConnectTimeout(CONNECT_TIMEOUT)</span><br><span class="line">            .setConnectionRequestTimeout(CONNECTION_REQUEST_TIMEOUT)</span><br><span class="line">            .setSocketTimeout(SOCKET_TIMEOUT)</span><br><span class="line">            .build();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="comment">// 总连接池数量</span></span><br><span class="line">        connectionManager.setMaxTotal(<span class="number">1000</span>);</span><br><span class="line">        <span class="comment">//将每个路由的默认最大连接数增加到500</span></span><br><span class="line">        connectionManager.setDefaultMaxPerRoute(<span class="number">500</span>);</span><br><span class="line">        <span class="comment">//连接存活时间</span></span><br><span class="line">        connectionManager.setValidateAfterInactivity(<span class="number">60_000</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Object</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> CloseableHttpAsyncClient <span class="title function_">getHttpAsyncClient</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (client == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (lock) &#123;</span><br><span class="line">                <span class="keyword">if</span> (client == <span class="literal">null</span>) &#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">                    <span class="comment">//配置io线程</span></span><br><span class="line">                    <span class="type">IOReactorConfig</span> <span class="variable">ioReactorConfig</span> <span class="operator">=</span> IOReactorConfig.custom().</span><br><span class="line">                            setIoThreadCount(Runtime.getRuntime().availableProcessors() * <span class="number">2</span>)</span><br><span class="line">                            .setSoKeepAlive(<span class="literal">true</span>)</span><br><span class="line">                            .build();</span><br><span class="line">                    <span class="comment">//设置连接池大小</span></span><br><span class="line">                    <span class="type">ConnectingIOReactor</span> <span class="variable">ioReactor</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        ioReactor = <span class="keyword">new</span> <span class="title class_">DefaultConnectingIOReactor</span>(ioReactorConfig);</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (IOReactorException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="type">PoolingNHttpClientConnectionManager</span> <span class="variable">connManager</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PoolingNHttpClientConnectionManager</span>(ioReactor);</span><br><span class="line">                    connManager.setMaxTotal(<span class="number">1000</span>);<span class="comment">//最大连接数设置</span></span><br><span class="line">                    connManager.setDefaultMaxPerRoute(<span class="number">500</span>);<span class="comment">//per route最大连接数设置</span></span><br><span class="line">                    client = HttpAsyncClients.custom()</span><br><span class="line">                            .setConnectionManager(connManager)</span><br><span class="line"><span class="comment">//                            .setKeepAliveStrategy(keepAliveStrategy)</span></span><br><span class="line">                            .setDefaultRequestConfig(requestConfig)</span><br><span class="line">                            .build();</span><br><span class="line">                    client.start();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">                    <span class="comment">//开启监控线程,对异常和空闲线程进行关闭</span></span><br><span class="line">                    <span class="type">ScheduledExecutorService</span> <span class="variable">monitorExecutor</span> <span class="operator">=</span> Executors.newScheduledThreadPool(<span class="number">1</span>);</span><br><span class="line">                    monitorExecutor.scheduleAtFixedRate(<span class="keyword">new</span> <span class="title class_">TimerTask</span>() &#123;</span><br><span class="line">                        <span class="meta">@Override</span></span><br><span class="line">                        <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">                            <span class="comment">//关闭异常连接</span></span><br><span class="line">                            connectionManager.closeExpiredConnections();</span><br><span class="line">                            <span class="comment">//关闭5s空闲的连接</span></span><br><span class="line">                            connectionManager.closeIdleConnections(<span class="number">5</span>, TimeUnit.SECONDS);</span><br><span class="line">                            log.debug(<span class="string">&quot;close expired and idle for over 5s connection&quot;</span>);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;, <span class="number">3</span>, <span class="number">3</span>, TimeUnit.SECONDS);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> client;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Future&lt;HttpResponse&gt; <span class="title function_">asyncExecute</span><span class="params">(RetryFutureProxy retryFutureProxy)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="type">CloseableHttpAsyncClient</span> <span class="variable">httpAsyncClient</span> <span class="operator">=</span> getHttpAsyncClient();</span><br><span class="line">        <span class="keyword">return</span> httpAsyncClient.execute(retryFutureProxy.request, retryFutureProxy);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Future&lt;HttpResponse&gt; <span class="title function_">asyncExecute</span><span class="params">(HttpUriRequest request, FutureCallback&lt;HttpResponse&gt; callback)</span> &#123;</span><br><span class="line">        <span class="type">CloseableHttpAsyncClient</span> <span class="variable">httpAsyncClient</span> <span class="operator">=</span> getHttpAsyncClient();</span><br><span class="line">        <span class="keyword">return</span> httpAsyncClient.execute(request, callback);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">boolean</span> <span class="title function_">isError</span><span class="params">(String result)</span> &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * nginx 500 页面</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (result != <span class="literal">null</span> &amp;&amp; result.startsWith(<span class="string">&quot;&lt;html&gt;&quot;</span>)) &#123;</span><br><span class="line">            log.info(result);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//阻塞方式获取结果内容</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> String <span class="title function_">httpRequest</span><span class="params">(String urlString)</span> &#123;</span><br><span class="line">        <span class="type">HttpGet</span> <span class="variable">httpGet</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HttpGet</span>(urlString);</span><br><span class="line">        <span class="type">EmptyRetryFutureCallBack</span> <span class="variable">callBack</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">EmptyRetryFutureCallBack</span>();</span><br><span class="line">        asyncExecute(httpGet, <span class="keyword">new</span> <span class="title class_">RetryFutureProxy</span>(httpGet, callBack));</span><br><span class="line">        <span class="type">String</span> <span class="variable">result</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//HttpEntity被EntityUtils.toString(entity)消费过了，采用这种方式获取结果集</span></span><br><span class="line">            result = callBack.getResult();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            log.error(<span class="string">&quot;httpUtil exception&quot;</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="调用"><a href="#调用" class="headerlink" title="调用"></a>调用</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span>&#123;</span><br><span class="line">	<span class="type">HttpGet</span> <span class="variable">httpGet</span> <span class="operator">=</span><span class="keyword">new</span> <span class="title class_">HttpGet</span>(<span class="string">&quot;http://www.baidu.com&quot;</span>);</span><br><span class="line">	<span class="type">RetryFutureProxy</span> <span class="variable">retryFutureProxy</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RetryFutureProxy</span>(<span class="number">2</span>,httpGet,<span class="keyword">new</span> <span class="title class_">MyCallBack</span>() );</span><br><span class="line">	HttpUtil.asyncExecute(retryFutureProxy);</span><br><span class="line">	<span class="comment">//防止主线程结束，回调还没结束</span></span><br><span class="line">	Thread.sleep(<span class="number">3000</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="阻塞式调用"><a href="#阻塞式调用" class="headerlink" title="阻塞式调用"></a>阻塞式调用</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span>&#123;</span><br><span class="line">	<span class="type">String</span> <span class="variable">result</span> <span class="operator">=</span> HttpUtil.httpRequest(<span class="string">&quot;http://www.baidu.com&quot;</span>);</span><br><span class="line">	System.out.println(result);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+        </div>
+        
+        <footer class="kratos-entry-footer clearfix">
+            
+            
+            
+                <div class="post-actions text-center clearfix" id="post-actions">
+                
+                    <a class="donate" href="javascript:;" onclick="krOpenDonateModal()"><i class="fa fa-bitcoin"></i> 打赏</a>
+                
+                
+                    <a class="share" href="javascript:;" onclick="krOpenShareModal()"><i class="fa fa-share-alt"></i> 分享</a>
+                
+                </div>
+            
+            <div class="footer-tag clearfix">
+                <div class="pull-left">
+                <i class="fa fa-tags"></i>
+                    
+                </div>
+                <div class="pull-date">
+                    <time datetime="2024-11-04T02:16:30.735Z" itemprop="dateModified">最后编辑：2024-11-04</time>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+        <nav class="navigation post-navigation clearfix" role="navigation">
+            
+            <div class="nav-previous clearfix">
+                <a title=" mapstruct 1.4.2和lombok 1.18.16之后版本，报错和mapstruct生成空的实现" href="/2021/05/14/mapstruct 1.4.2和lombok 1.18.16之后版本，报错和mapstruct生成空的实现/"><i class="fa fa-angle-left"></i> 上一篇</a>
+            </div>
+            
+            
+            <div class="nav-next clearfix">
+                <a title=" 使用Jackson对字典翻译" href="/2021/05/25/使用Jackson对字典翻译/">下一篇 <i class="fa fa-angle-right"></i></a>
+            </div>
+            
+        </nav>
+    
+    
+</article>
+
+        
+
+            </section>
+
+            
+                
+
+<section id="kratos-widget-area" class="col-md-4 hidden-xs hidden-sm">
+    <!-- 文章和页面根据splitter来分割，没有的话就从头开始设置为sticky -->
+    
+        <div class="sticky-area">
+    
+    
+    </div>
+</section>
+            
+
+        
+
+                </div>
+    </div>
+</div>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 footer-list text-center">
+                    <ul class="kratos-social-icons">
+                        
+                    </ul>
+                    <ul class="kratos-copyright">
+                        <div>
+                            <li>&copy; 2024 Hexo 版权所有.</li>
+                            <li>本站已运行<span id="kr-since">Loading...</span></li>
+                        </div>
+                        <div>
+                            <li>自豪地使用 <a href="https://github.com/Candinya/Kratos-Rebirth" target="_blank">Kratos:Rebirth</a> 主题</li>
+                            <li>站点由 John Doe 用 <i class="fa fa-heart" style="color:#d43f57"></i> 搭建</li>
+                        </div>
+                        <!-- 额外的追加注入项 -->
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="kr-tool text-center">
+            <div class="tool">
+                
+                    <div class="box search-box">
+                        <a href="/search">
+                            <span class="fa fa-search"></span>
+                        </a>
+                    </div>
+                
+                <div class="box theme-box" id="theme-toggle">
+                    <span class="fa fa-adjust"></span>
+                </div>
+            </div>
+            <div id="gotop-box" class="box gotop-box">
+                <span class="fa fa-chevron-up"></span>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+
+
+    <div id="kr-donate-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseDonateModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-bitcoin"></i>
+            </div>
+            <div class="kr-modal-title">打赏</div>
+            <button class="kr-modal-close" onclick="krCloseDonateModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-donate-message">打赏提示信息</div>
+            <div class="kr-donate-qr" id="kr-donate-qr">
+                
+            </div>
+            <div class="kr-donate-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/donate.min.js"></script>
+
+
+
+
+    <div id="kr-share-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseShareModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-share-alt"></i>
+            </div>
+            <div class="kr-modal-title">分享</div>
+            <button class="kr-modal-close" onclick="krCloseShareModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-share-message">分享提示信息</div>
+            <div class="kr-share-qr" id="kr-share-qr"></div>
+            <div class="kr-share-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/share.min.js"></script>
+
+
+
+<!-- 额外的追加注入项 -->
+
+
+        <script>
+    if (!window.kr) {
+        window.kr = {};
+    }
+    window.kr.notMobile = (!(navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    window.kr.siteRoot = "/";
+</script>
+
+
+  <script defer src="/vendors/nprogress@0.2.0/nprogress.js"></script>
+
+
+
+  <script defer src="/vendors/viewerjs@1.11.6/dist/viewer.min.js"></script>
+
+
+<script defer src="/js/kr-core.min.js"></script>
+
+
+  <script defer src="/js/kr-pjax.min.js"></script>
+
+
+<!-- 额外的追加注入项 -->
+
+
+    </body>
+</html>
