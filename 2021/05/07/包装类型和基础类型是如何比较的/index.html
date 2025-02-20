@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+  <!-- 元数据 -->
+  <meta charset="utf-8">
+  
+  
+  <title>包装类型和基础类型是如何比较的 | Hexo</title>
+  <link rel="canonical" href="http://example.com/2021/05/07/%E5%8C%85%E8%A3%85%E7%B1%BB%E5%9E%8B%E5%92%8C%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%9E%8B%E6%98%AF%E5%A6%82%E4%BD%95%E6%AF%94%E8%BE%83%E7%9A%84/">
+  <meta name="author" content="John Doe" />
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="format-detection" content="telphone=no, email=no" />
+  
+    <meta name="keywords" content="java" />
+  
+  <meta name="description" content="基础类型和基础类型比较基础类型和基础类型比较使用&#x3D;&#x3D;,直接比较值 包装类型比较 使用&#x3D;&#x3D;比较，则比较的是引用指向的地址 使用equals()方法比较，则比较的是他的值  基础类型和包装类型比较12345678910111213Integer a &#x3D; new Integer(10);Integer b &#x3D; new Integer(10);System.ou">
+<meta property="og:type" content="article">
+<meta property="og:title" content="包装类型和基础类型是如何比较的">
+<meta property="og:url" content="http://example.com/2021/05/07/%E5%8C%85%E8%A3%85%E7%B1%BB%E5%9E%8B%E5%92%8C%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%9E%8B%E6%98%AF%E5%A6%82%E4%BD%95%E6%AF%94%E8%BE%83%E7%9A%84/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基础类型和基础类型比较基础类型和基础类型比较使用&#x3D;&#x3D;,直接比较值 包装类型比较 使用&#x3D;&#x3D;比较，则比较的是引用指向的地址 使用equals()方法比较，则比较的是他的值  基础类型和包装类型比较12345678910111213Integer a &#x3D; new Integer(10);Integer b &#x3D; new Integer(10);System.ou">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-05-07T03:21:00.000Z">
+<meta property="article:modified_time" content="2025-02-20T08:51:11.338Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="java">
+<meta name="twitter:card" content="summary">
+  
+  <!-- 样式表文件 -->
+  <link rel="stylesheet" id="kratos-css" href="/css/kr-core.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="highlight-css" href="/css/highlight/highlight.js/night-eighties.min.css" media="all"></link>
+  
+  <link rel="stylesheet" id="theme-light-css" href="/css/kr-theme/light.min.css" media="all"></link>
+  <link rel="stylesheet" id="theme-dark-css" href="/css/kr-theme/dark.min.css" media="(prefers-color-scheme: dark)"></link>
+  <script src="/js/kr-theme.min.js"></script>
+  <link rel="stylesheet" id="fontawe-css" href="/vendors/font-awesome@4.7.0/css/font-awesome.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="nprogress-css" href="/vendors/nprogress@0.2.0/nprogress.css" media="all"></link>
+  
+  
+    <link rel="stylesheet" href="/vendors/viewerjs@1.11.6/dist/viewer.min.css"></link>
+  
+  <!-- 不得不预先加载的一些JS文件 -->
+  
+    <script src="/vendors/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  
+  <!-- 自定义站点横幅和背景 -->
+  <style>
+    
+      .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+      html[data-theme="dark"] .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+    
+    
+      @media(min-width:768px) {
+        body.custom-background {
+          background-image: url('https://raw.githubusercontent.com/huisunan/cdn/main/img/love.png');
+        }
+        html[data-theme="dark"] body.custom-background {
+          background-image: url('');
+        }
+      }
+    
+    
+      .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+      html[data-theme="dark"] .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+    
+  </style>
+
+  <!-- 额外的追加注入项 -->
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+    <body class="custom-background">
+        <div id="kratos-wrapper">
+    <div id="kratos-page">
+        <div id="kratos-header">
+            <header id="kratos-desktop-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="nav-header">
+                        <nav id="kratos-menu-wrap">
+                            <ul id="kratos-primary-menu" class="sf-menu">
+                                
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+            <header id="kratos-mobile-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="color-logo"><a href="/">Hexo</a></div>
+                    <div id="kratos-nav-toggle-wrapper" class="nav-toggle">
+                        <a id="kratos-nav-toggle" class="kratos-nav-toggle">
+                            <i></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="kratos-start kratos-hero-2">
+            <!-- <div class="kratos-overlay"></div> -->
+            <div class="kratos-cover kratos-cover-2 text-center">
+                <div class="desc desc2 animate-box">
+                    <a href="/">
+                        <h2>Hexo</h2> <br />
+                        <span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="kratos-blog-post">
+            <div class="container">
+                <div id="main" class="row">
+
+
+        
+
+            
+
+            <section class="kr-main-col col-md-8">
+
+        
+
+            <article itemscope itemtype="https://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/07/%E5%8C%85%E8%A3%85%E7%B1%BB%E5%9E%8B%E5%92%8C%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%9E%8B%E6%98%AF%E5%A6%82%E4%BD%95%E6%AF%94%E8%BE%83%E7%9A%84/">
+    <div class="kratos-hentry kratos-page-inner clearfix">
+        <header class="kratos-page-header">
+            
+                <h1 class="kratos-page-title text-center" itemprop="name headline">包装类型和基础类型是如何比较的</h1>
+            
+            <ul class="kratos-page-meta text-center">
+                <li><time datetime="2021-05-07T03:21:00.000Z" itemprop="datePublished"><i class="fa fa-calendar"></i> 2021-05-07</time></li>
+                <li itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <i class="fa fa-user"></i> 作者 <span itemprop="name">John Doe</span>
+                </li>
+                
+                    <li>
+                        <i class="fa fa-edit"></i> 
+                        
+                        
+                            1396
+                        
+                        字
+                    </li>
+                
+                
+                
+            </ul>
+        </header>
+        <div class="kratos-page-content kr-post">
+            
+            
+            
+            <hr />
+            <div itemprop="articleBody"><span id="more"></span>
+
+<h1 id="基础类型和基础类型比较"><a href="#基础类型和基础类型比较" class="headerlink" title="基础类型和基础类型比较"></a>基础类型和基础类型比较</h1><p>基础类型和基础类型比较使用&#x3D;&#x3D;,直接比较值</p>
+<h1 id="包装类型比较"><a href="#包装类型比较" class="headerlink" title="包装类型比较"></a>包装类型比较</h1><ol>
+<li>使用&#x3D;&#x3D;比较，则比较的是引用指向的地址</li>
+<li>使用equals()方法比较，则比较的是他的值</li>
+</ol>
+<h1 id="基础类型和包装类型比较"><a href="#基础类型和包装类型比较" class="headerlink" title="基础类型和包装类型比较"></a>基础类型和包装类型比较</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Integer</span> <span class="variable">a</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">10</span>);</span><br><span class="line"><span class="type">Integer</span> <span class="variable">b</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">10</span>);</span><br><span class="line">System.out.println(a == b);<span class="comment">//false   引用指向的地址不一样</span></span><br><span class="line">System.out.println(a.equals(b));<span class="comment">//true  比较基本数据类型的值</span></span><br><span class="line"></span><br><span class="line"><span class="type">Integer</span> <span class="variable">c</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line"><span class="type">Integer</span> <span class="variable">d</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">System.out.println(c == d);<span class="comment">//true   引用指向的地址相同 自动装箱的Integer进行了缓存，[-128,127]进行了缓存</span></span><br><span class="line">System.out.println(c.equals(d));<span class="comment">//true 基本数据类型的值是相同的</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="variable">e</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">System.out.println(e == c);<span class="comment">//true int和Integer比较，Integer会自动拆箱，调用intValue方法, 所以 == 和 equals都肯定为true</span></span><br><span class="line">System.out.println(c.equals(e));<span class="comment">// true Integer使用equals 传入 int,会先装箱成Integer 再使用equals()进行比较</span></span><br></pre></td></tr></table></figure>
+
+<p>使用javap -c 反汇编命令查看基础类型和包装类型进行比较的过程</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">99</span>: invokevirtual #<span class="number">8</span>                  <span class="comment">// Method java/lang/Integer.intValue:()I   调用intValue获取包装类型的基础类型</span></span><br><span class="line"><span class="number">102</span>: if_icmpne     <span class="number">109</span></span><br><span class="line"><span class="number">105</span>: iconst_1</span><br><span class="line"><span class="number">106</span>: <span class="keyword">goto</span>          <span class="number">110</span></span><br><span class="line"><span class="number">109</span>: iconst_0</span><br><span class="line"><span class="number">110</span>: invokevirtual #<span class="number">5</span>                  <span class="comment">// Method java/io/PrintStream.println:(Z)V</span></span><br><span class="line"><span class="number">113</span>: getstatic     #<span class="number">4</span>                  <span class="comment">// Field java/lang/System.out:Ljava/io/PrintStream;</span></span><br><span class="line"><span class="number">116</span>: aload_3</span><br><span class="line"><span class="number">117</span>: iload         <span class="number">5</span></span><br><span class="line"><span class="number">119</span>: invokestatic  #<span class="number">7</span>                  <span class="comment">// Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer; 调用Integer.valueOf()方法对基础数据类型进行装箱，再传入equals方法里</span></span><br><span class="line"><span class="number">122</span>: invokevirtual #<span class="number">6</span>                  <span class="comment">// Method java/lang/Integer.equals:(Ljava/lang/Object;)Z</span></span><br><span class="line"><span class="number">125</span>: invokevirtual #<span class="number">5</span>                  <span class="comment">// Method java/io/PrintStream.println:(Z)V</span></span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+        </div>
+        
+        <footer class="kratos-entry-footer clearfix">
+            
+            
+            
+                <div class="post-actions text-center clearfix" id="post-actions">
+                
+                    <a class="donate" href="javascript:;" onclick="krOpenDonateModal()"><i class="fa fa-bitcoin"></i> 打赏</a>
+                
+                
+                    <a class="share" href="javascript:;" onclick="krOpenShareModal()"><i class="fa fa-share-alt"></i> 分享</a>
+                
+                </div>
+            
+            <div class="footer-tag clearfix">
+                <div class="pull-left">
+                <i class="fa fa-tags"></i>
+                    <a class="tag-none-link" href="/%E6%A0%87%E7%AD%BE/java/" rel="tag">java</a>
+                </div>
+                <div class="pull-date">
+                    <time datetime="2025-02-20T08:51:11.338Z" itemprop="dateModified">最后编辑：2025-02-20</time>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+        <nav class="navigation post-navigation clearfix" role="navigation">
+            
+            <div class="nav-previous clearfix">
+                <a title=" hashmap" href="/2021/05/07/hashmap/"><i class="fa fa-angle-left"></i> 上一篇</a>
+            </div>
+            
+            
+            <div class="nav-next clearfix">
+                <a title=" java代理的实现" href="/2021/05/07/java代理的实现/">下一篇 <i class="fa fa-angle-right"></i></a>
+            </div>
+            
+        </nav>
+    
+    
+</article>
+
+        
+
+            </section>
+
+            
+                
+
+<section id="kratos-widget-area" class="col-md-4 hidden-xs hidden-sm">
+    <!-- 文章和页面根据splitter来分割，没有的话就从头开始设置为sticky -->
+    
+        <div class="sticky-area">
+    
+    
+    </div>
+</section>
+            
+
+        
+
+                </div>
+    </div>
+</div>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 footer-list text-center">
+                    <ul class="kratos-social-icons">
+                        
+                    </ul>
+                    <ul class="kratos-copyright">
+                        <div>
+                            <li>&copy; 2025 Hexo 版权所有.</li>
+                            <li>本站已运行<span id="kr-since">Loading...</span></li>
+                        </div>
+                        <div>
+                            <li>自豪地使用 <a href="https://github.com/Candinya/Kratos-Rebirth" target="_blank">Kratos:Rebirth</a> 主题</li>
+                            <li>站点由 John Doe 用 <i class="fa fa-heart" style="color:#d43f57"></i> 搭建</li>
+                        </div>
+                        <!-- 额外的追加注入项 -->
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="kr-tool text-center">
+            <div class="tool">
+                
+                    <div class="box search-box">
+                        <a href="/search">
+                            <span class="fa fa-search"></span>
+                        </a>
+                    </div>
+                
+                <div class="box theme-box" id="theme-toggle">
+                    <span class="fa fa-adjust"></span>
+                </div>
+            </div>
+            <div id="gotop-box" class="box gotop-box">
+                <span class="fa fa-chevron-up"></span>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+
+
+    <div id="kr-donate-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseDonateModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-bitcoin"></i>
+            </div>
+            <div class="kr-modal-title">打赏</div>
+            <button class="kr-modal-close" onclick="krCloseDonateModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-donate-message">打赏提示信息</div>
+            <div class="kr-donate-qr" id="kr-donate-qr">
+                
+            </div>
+            <div class="kr-donate-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/donate.min.js"></script>
+
+
+
+
+    <div id="kr-share-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseShareModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-share-alt"></i>
+            </div>
+            <div class="kr-modal-title">分享</div>
+            <button class="kr-modal-close" onclick="krCloseShareModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-share-message">分享提示信息</div>
+            <div class="kr-share-qr" id="kr-share-qr"></div>
+            <div class="kr-share-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/share.min.js"></script>
+
+
+
+<!-- 额外的追加注入项 -->
+
+
+        <script>
+    if (!window.kr) {
+        window.kr = {};
+    }
+    window.kr.notMobile = (!(navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    window.kr.siteRoot = "/";
+</script>
+
+
+  <script defer src="/vendors/nprogress@0.2.0/nprogress.js"></script>
+
+
+
+  <script defer src="/vendors/viewerjs@1.11.6/dist/viewer.min.js"></script>
+
+
+<script defer src="/js/kr-core.min.js"></script>
+
+
+  <script defer src="/js/kr-pjax.min.js"></script>
+
+
+<!-- 额外的追加注入项 -->
+
+
+    </body>
+</html>

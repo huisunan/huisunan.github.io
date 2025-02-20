@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+  <!-- 元数据 -->
+  <meta charset="utf-8">
+  
+  
+  <title>使用spring cloud gateway 转发文件上传请求时，直接内存oom异常 | Hexo</title>
+  <link rel="canonical" href="http://example.com/2024/01/03/%E4%BD%BF%E7%94%A8spring%20cloud%20gateway%20%E8%BD%AC%E5%8F%91%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E8%AF%B7%E6%B1%82%E6%97%B6%EF%BC%8C%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98oom%E5%BC%82%E5%B8%B8/">
+  <meta name="author" content="John Doe" />
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="format-detection" content="telphone=no, email=no" />
+  
+    <meta name="keywords" content="java" />
+  
+  <meta name="description" content="重写 AdaptCachedBodyGlobalFilter 直接在项目中建立一个包名和文件名一样的类,实现覆盖的效果，目前官方的类还不支持拓展 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用spring cloud gateway 转发文件上传请求时，直接内存oom异常">
+<meta property="og:url" content="http://example.com/2024/01/03/%E4%BD%BF%E7%94%A8spring%20cloud%20gateway%20%E8%BD%AC%E5%8F%91%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E8%AF%B7%E6%B1%82%E6%97%B6%EF%BC%8C%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98oom%E5%BC%82%E5%B8%B8/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="重写 AdaptCachedBodyGlobalFilter 直接在项目中建立一个包名和文件名一样的类,实现覆盖的效果，目前官方的类还不支持拓展 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240103234938964-1542120015_1730686602019.png">
+<meta property="article:published_time" content="2024-01-03T15:52:00.000Z">
+<meta property="article:modified_time" content="2025-02-20T08:51:11.337Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240103234938964-1542120015_1730686602019.png">
+  
+  <!-- 样式表文件 -->
+  <link rel="stylesheet" id="kratos-css" href="/css/kr-core.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="highlight-css" href="/css/highlight/highlight.js/night-eighties.min.css" media="all"></link>
+  
+  <link rel="stylesheet" id="theme-light-css" href="/css/kr-theme/light.min.css" media="all"></link>
+  <link rel="stylesheet" id="theme-dark-css" href="/css/kr-theme/dark.min.css" media="(prefers-color-scheme: dark)"></link>
+  <script src="/js/kr-theme.min.js"></script>
+  <link rel="stylesheet" id="fontawe-css" href="/vendors/font-awesome@4.7.0/css/font-awesome.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="nprogress-css" href="/vendors/nprogress@0.2.0/nprogress.css" media="all"></link>
+  
+  
+    <link rel="stylesheet" href="/vendors/viewerjs@1.11.6/dist/viewer.min.css"></link>
+  
+  <!-- 不得不预先加载的一些JS文件 -->
+  
+    <script src="/vendors/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  
+  <!-- 自定义站点横幅和背景 -->
+  <style>
+    
+      .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+      html[data-theme="dark"] .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+    
+    
+      @media(min-width:768px) {
+        body.custom-background {
+          background-image: url('https://raw.githubusercontent.com/huisunan/cdn/main/img/love.png');
+        }
+        html[data-theme="dark"] body.custom-background {
+          background-image: url('');
+        }
+      }
+    
+    
+      .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+      html[data-theme="dark"] .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+    
+  </style>
+
+  <!-- 额外的追加注入项 -->
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+    <body class="custom-background">
+        <div id="kratos-wrapper">
+    <div id="kratos-page">
+        <div id="kratos-header">
+            <header id="kratos-desktop-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="nav-header">
+                        <nav id="kratos-menu-wrap">
+                            <ul id="kratos-primary-menu" class="sf-menu">
+                                
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+            <header id="kratos-mobile-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="color-logo"><a href="/">Hexo</a></div>
+                    <div id="kratos-nav-toggle-wrapper" class="nav-toggle">
+                        <a id="kratos-nav-toggle" class="kratos-nav-toggle">
+                            <i></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="kratos-start kratos-hero-2">
+            <!-- <div class="kratos-overlay"></div> -->
+            <div class="kratos-cover kratos-cover-2 text-center">
+                <div class="desc desc2 animate-box">
+                    <a href="/">
+                        <h2>Hexo</h2> <br />
+                        <span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="kratos-blog-post">
+            <div class="container">
+                <div id="main" class="row">
+
+
+        
+
+            
+
+            <section class="kr-main-col col-md-8">
+
+        
+
+            <article itemscope itemtype="https://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/01/03/%E4%BD%BF%E7%94%A8spring%20cloud%20gateway%20%E8%BD%AC%E5%8F%91%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E8%AF%B7%E6%B1%82%E6%97%B6%EF%BC%8C%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98oom%E5%BC%82%E5%B8%B8/">
+    <div class="kratos-hentry kratos-page-inner clearfix">
+        <header class="kratos-page-header">
+            
+                <h1 class="kratos-page-title text-center" itemprop="name headline">使用spring cloud gateway 转发文件上传请求时，直接内存oom异常</h1>
+            
+            <ul class="kratos-page-meta text-center">
+                <li><time datetime="2024-01-03T15:52:00.000Z" itemprop="datePublished"><i class="fa fa-calendar"></i> 2024-01-03</time></li>
+                <li itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <i class="fa fa-user"></i> 作者 <span itemprop="name">John Doe</span>
+                </li>
+                
+                    <li>
+                        <i class="fa fa-edit"></i> 
+                        
+                        
+                            ~3.85K
+                        
+                        字
+                    </li>
+                
+                
+                
+            </ul>
+        </header>
+        <div class="kratos-page-content kr-post">
+            
+            
+            
+            <hr />
+            <div itemprop="articleBody"><span id="more"></span>
+
+<p>重写 AdaptCachedBodyGlobalFilter</p>
+<p>直接在项目中建立一个包名和文件名一样的类,实现覆盖的效果，目前官方的类还不支持拓展<br><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240103234938964-1542120015_1730686602019.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * Copyright 2013-2020 the original author or authors.</span><br><span class="line"> *</span><br><span class="line"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span><br><span class="line"> * you may not use this file except in compliance with the License.</span><br><span class="line"> * You may obtain a copy of the License at</span><br><span class="line"> *</span><br><span class="line"> *      https://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"> *</span><br><span class="line"> * Unless required by applicable law or agreed to in writing, software</span><br><span class="line"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"> * See the License for the specific language governing permissions and</span><br><span class="line"> * limitations under the License.</span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">package org.springframework.cloud.gateway.filter;</span><br><span class="line"></span><br><span class="line">import java.util.concurrent.ConcurrentHashMap;</span><br><span class="line">import java.util.concurrent.ConcurrentMap;</span><br><span class="line"></span><br><span class="line">import org.springframework.http.HttpHeaders;</span><br><span class="line">import org.springframework.http.MediaType;</span><br><span class="line">import reactor.core.publisher.Mono;</span><br><span class="line"></span><br><span class="line">import org.springframework.cloud.gateway.event.EnableBodyCachingEvent;</span><br><span class="line">import org.springframework.cloud.gateway.route.Route;</span><br><span class="line">import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;</span><br><span class="line">import org.springframework.context.ApplicationListener;</span><br><span class="line">import org.springframework.core.Ordered;</span><br><span class="line">import org.springframework.core.io.buffer.DataBuffer;</span><br><span class="line">import org.springframework.http.server.reactive.ServerHttpRequest;</span><br><span class="line">import org.springframework.web.server.ServerWebExchange;</span><br><span class="line"></span><br><span class="line">import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CACHED_REQUEST_BODY_ATTR;</span><br><span class="line">import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR;</span><br><span class="line">import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;</span><br><span class="line"></span><br><span class="line">public class AdaptCachedBodyGlobalFilter implements GlobalFilter, Ordered, ApplicationListener&lt;EnableBodyCachingEvent&gt; &#123;</span><br><span class="line"></span><br><span class="line">	private ConcurrentMap&lt;String, Boolean&gt; routesToCache = new ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void onApplicationEvent(EnableBodyCachingEvent event) &#123;</span><br><span class="line">		this.routesToCache.putIfAbsent(event.getRouteId(), true);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public Mono&lt;Void&gt; filter(ServerWebExchange exchange, GatewayFilterChain chain) &#123;</span><br><span class="line">		//此处为重写代码-start</span><br><span class="line">		String contentType = exchange.getRequest().getHeaders().getFirst(HttpHeaders.CONTENT_TYPE);</span><br><span class="line"></span><br><span class="line">		if (contentType != null &amp;&amp; contentType.contains(MediaType.MULTIPART_FORM_DATA_VALUE)) &#123;</span><br><span class="line">			return chain.filter(exchange);</span><br><span class="line">		&#125;</span><br><span class="line">		//此处为重写代码-end</span><br><span class="line">		// the cached ServerHttpRequest is used when the ServerWebExchange can not be</span><br><span class="line">		// mutated, for example, during a predicate where the body is read, but still</span><br><span class="line">		// needs to be cached.</span><br><span class="line">		ServerHttpRequest cachedRequest = exchange.getAttributeOrDefault(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR,</span><br><span class="line">			null);</span><br><span class="line">		if (cachedRequest != null) &#123;</span><br><span class="line">			exchange.getAttributes().remove(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);</span><br><span class="line">			return chain.filter(exchange.mutate().request(cachedRequest).build());</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		//</span><br><span class="line">		DataBuffer body = exchange.getAttributeOrDefault(CACHED_REQUEST_BODY_ATTR, null);</span><br><span class="line">		Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);</span><br><span class="line"></span><br><span class="line">		if (body != null || !this.routesToCache.containsKey(route.getId())) &#123;</span><br><span class="line">			return chain.filter(exchange);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		return ServerWebExchangeUtils.cacheRequestBody(exchange, (serverHttpRequest) -&gt; &#123;</span><br><span class="line">			// don&#x27;t mutate and build if same request object</span><br><span class="line">			if (serverHttpRequest == exchange.getRequest()) &#123;</span><br><span class="line">				return chain.filter(exchange);</span><br><span class="line">			&#125;</span><br><span class="line">			return chain.filter(exchange.mutate().request(serverHttpRequest).build());</span><br><span class="line">		&#125;);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public int getOrder() &#123;</span><br><span class="line">		return Ordered.HIGHEST_PRECEDENCE + 1000;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></div>
+        </div>
+        
+        <footer class="kratos-entry-footer clearfix">
+            
+            
+            
+                <div class="post-actions text-center clearfix" id="post-actions">
+                
+                    <a class="donate" href="javascript:;" onclick="krOpenDonateModal()"><i class="fa fa-bitcoin"></i> 打赏</a>
+                
+                
+                    <a class="share" href="javascript:;" onclick="krOpenShareModal()"><i class="fa fa-share-alt"></i> 分享</a>
+                
+                </div>
+            
+            <div class="footer-tag clearfix">
+                <div class="pull-left">
+                <i class="fa fa-tags"></i>
+                    <a class="tag-none-link" href="/%E6%A0%87%E7%AD%BE/java/" rel="tag">java</a>
+                </div>
+                <div class="pull-date">
+                    <time datetime="2025-02-20T08:51:11.337Z" itemprop="dateModified">最后编辑：2025-02-20</time>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+        <nav class="navigation post-navigation clearfix" role="navigation">
+            
+            <div class="nav-previous clearfix">
+                <a title=" spring boot 开启gzip 加快报文传输速度" href="/2023/12/30/spring boot 开启gzip 加快报文传输速度/"><i class="fa fa-angle-left"></i> 上一篇</a>
+            </div>
+            
+            
+            <div class="nav-next clearfix">
+                <a title=" 使用RSS+n8n同步博客园文章到cubox" href="/2024/02/07/使用RSS+n8n同步博客园文章到cubox/">下一篇 <i class="fa fa-angle-right"></i></a>
+            </div>
+            
+        </nav>
+    
+    
+</article>
+
+        
+
+            </section>
+
+            
+                
+
+<section id="kratos-widget-area" class="col-md-4 hidden-xs hidden-sm">
+    <!-- 文章和页面根据splitter来分割，没有的话就从头开始设置为sticky -->
+    
+        <div class="sticky-area">
+    
+    
+    </div>
+</section>
+            
+
+        
+
+                </div>
+    </div>
+</div>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 footer-list text-center">
+                    <ul class="kratos-social-icons">
+                        
+                    </ul>
+                    <ul class="kratos-copyright">
+                        <div>
+                            <li>&copy; 2025 Hexo 版权所有.</li>
+                            <li>本站已运行<span id="kr-since">Loading...</span></li>
+                        </div>
+                        <div>
+                            <li>自豪地使用 <a href="https://github.com/Candinya/Kratos-Rebirth" target="_blank">Kratos:Rebirth</a> 主题</li>
+                            <li>站点由 John Doe 用 <i class="fa fa-heart" style="color:#d43f57"></i> 搭建</li>
+                        </div>
+                        <!-- 额外的追加注入项 -->
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="kr-tool text-center">
+            <div class="tool">
+                
+                    <div class="box search-box">
+                        <a href="/search">
+                            <span class="fa fa-search"></span>
+                        </a>
+                    </div>
+                
+                <div class="box theme-box" id="theme-toggle">
+                    <span class="fa fa-adjust"></span>
+                </div>
+            </div>
+            <div id="gotop-box" class="box gotop-box">
+                <span class="fa fa-chevron-up"></span>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+
+
+    <div id="kr-donate-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseDonateModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-bitcoin"></i>
+            </div>
+            <div class="kr-modal-title">打赏</div>
+            <button class="kr-modal-close" onclick="krCloseDonateModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-donate-message">打赏提示信息</div>
+            <div class="kr-donate-qr" id="kr-donate-qr">
+                
+            </div>
+            <div class="kr-donate-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/donate.min.js"></script>
+
+
+
+
+    <div id="kr-share-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseShareModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-share-alt"></i>
+            </div>
+            <div class="kr-modal-title">分享</div>
+            <button class="kr-modal-close" onclick="krCloseShareModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-share-message">分享提示信息</div>
+            <div class="kr-share-qr" id="kr-share-qr"></div>
+            <div class="kr-share-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/share.min.js"></script>
+
+
+
+<!-- 额外的追加注入项 -->
+
+
+        <script>
+    if (!window.kr) {
+        window.kr = {};
+    }
+    window.kr.notMobile = (!(navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    window.kr.siteRoot = "/";
+</script>
+
+
+  <script defer src="/vendors/nprogress@0.2.0/nprogress.js"></script>
+
+
+
+  <script defer src="/vendors/viewerjs@1.11.6/dist/viewer.min.js"></script>
+
+
+<script defer src="/js/kr-core.min.js"></script>
+
+
+  <script defer src="/js/kr-pjax.min.js"></script>
+
+
+<!-- 额外的追加注入项 -->
+
+
+    </body>
+</html>

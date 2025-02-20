@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+  <!-- 元数据 -->
+  <meta charset="utf-8">
+  
+  
+  <title>Redisson的Lock原理和参数 | Hexo</title>
+  <link rel="canonical" href="http://example.com/2022/08/09/Redisson%E7%9A%84Lock%E5%8E%9F%E7%90%86%E5%92%8C%E5%8F%82%E6%95%B0/">
+  <meta name="author" content="John Doe" />
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index,follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="format-detection" content="telphone=no, email=no" />
+  
+    <meta name="keywords" content="java" />
+  
+  <meta name="description" content="Reidsson的Lock原理和看门狗机制Lock获取锁调用RedissonClient的getLock方法获取锁 1234567891011&#x2F;** * Returns Lock instance by name. * &lt;p&gt; * Implements a &lt;b&gt;non-fair&lt;&#x2F;b&gt; locking so doesn&#x27;t guarantees">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redisson的Lock原理和参数">
+<meta property="og:url" content="http://example.com/2022/08/09/Redisson%E7%9A%84Lock%E5%8E%9F%E7%90%86%E5%92%8C%E5%8F%82%E6%95%B0/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Reidsson的Lock原理和看门狗机制Lock获取锁调用RedissonClient的getLock方法获取锁 1234567891011&#x2F;** * Returns Lock instance by name. * &lt;p&gt; * Implements a &lt;b&gt;non-fair&lt;&#x2F;b&gt; locking so doesn&#x27;t guarantees">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-08-09T12:52:00.000Z">
+<meta property="article:modified_time" content="2025-02-20T08:51:11.334Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="java">
+<meta name="twitter:card" content="summary">
+  
+  <!-- 样式表文件 -->
+  <link rel="stylesheet" id="kratos-css" href="/css/kr-core.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="highlight-css" href="/css/highlight/highlight.js/night-eighties.min.css" media="all"></link>
+  
+  <link rel="stylesheet" id="theme-light-css" href="/css/kr-theme/light.min.css" media="all"></link>
+  <link rel="stylesheet" id="theme-dark-css" href="/css/kr-theme/dark.min.css" media="(prefers-color-scheme: dark)"></link>
+  <script src="/js/kr-theme.min.js"></script>
+  <link rel="stylesheet" id="fontawe-css" href="/vendors/font-awesome@4.7.0/css/font-awesome.min.css" media="all"></link>
+  
+    <link rel="stylesheet" id="nprogress-css" href="/vendors/nprogress@0.2.0/nprogress.css" media="all"></link>
+  
+  
+    <link rel="stylesheet" href="/vendors/viewerjs@1.11.6/dist/viewer.min.css"></link>
+  
+  <!-- 不得不预先加载的一些JS文件 -->
+  
+    <script src="/vendors/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  
+  <!-- 自定义站点横幅和背景 -->
+  <style>
+    
+      .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+      html[data-theme="dark"] .kratos-cover.kratos-cover-2 {
+        background-image: url('');
+      }
+    
+    
+      @media(min-width:768px) {
+        body.custom-background {
+          background-image: url('https://raw.githubusercontent.com/huisunan/cdn/main/img/love.png');
+        }
+        html[data-theme="dark"] body.custom-background {
+          background-image: url('');
+        }
+      }
+    
+    
+      .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+      html[data-theme="dark"] .widget-kratos-about .photo-background {
+        background-image: url('/images/default.webp');
+      }
+    
+  </style>
+
+  <!-- 额外的追加注入项 -->
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+    <body class="custom-background">
+        <div id="kratos-wrapper">
+    <div id="kratos-page">
+        <div id="kratos-header">
+            <header id="kratos-desktop-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="nav-header">
+                        <nav id="kratos-menu-wrap">
+                            <ul id="kratos-primary-menu" class="sf-menu">
+                                
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+            <header id="kratos-mobile-topnav" class="kratos-topnav">
+                <div class="container">
+                    <div class="color-logo"><a href="/">Hexo</a></div>
+                    <div id="kratos-nav-toggle-wrapper" class="nav-toggle">
+                        <a id="kratos-nav-toggle" class="kratos-nav-toggle">
+                            <i></i>
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+        <div class="kratos-start kratos-hero-2">
+            <!-- <div class="kratos-overlay"></div> -->
+            <div class="kratos-cover kratos-cover-2 text-center">
+                <div class="desc desc2 animate-box">
+                    <a href="/">
+                        <h2>Hexo</h2> <br />
+                        <span></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="kratos-blog-post">
+            <div class="container">
+                <div id="main" class="row">
+
+
+        
+
+            
+
+            <section class="kr-main-col col-md-8">
+
+        
+
+            <article itemscope itemtype="https://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/08/09/Redisson%E7%9A%84Lock%E5%8E%9F%E7%90%86%E5%92%8C%E5%8F%82%E6%95%B0/">
+    <div class="kratos-hentry kratos-page-inner clearfix">
+        <header class="kratos-page-header">
+            
+                <h1 class="kratos-page-title text-center" itemprop="name headline">Redisson的Lock原理和参数</h1>
+            
+            <ul class="kratos-page-meta text-center">
+                <li><time datetime="2022-08-09T12:52:00.000Z" itemprop="datePublished"><i class="fa fa-calendar"></i> 2022-08-09</time></li>
+                <li itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <i class="fa fa-user"></i> 作者 <span itemprop="name">John Doe</span>
+                </li>
+                
+                    <li>
+                        <i class="fa fa-edit"></i> 
+                        
+                        
+                            ~13.21K
+                        
+                        字
+                    </li>
+                
+                
+                
+            </ul>
+        </header>
+        <div class="kratos-page-content kr-post">
+            
+            
+            
+            <hr />
+            <div itemprop="articleBody"><span id="more"></span>
+
+<h1 id="Reidsson的Lock原理和看门狗机制"><a href="#Reidsson的Lock原理和看门狗机制" class="headerlink" title="Reidsson的Lock原理和看门狗机制"></a>Reidsson的Lock原理和看门狗机制</h1><h2 id="Lock"><a href="#Lock" class="headerlink" title="Lock"></a>Lock</h2><h3 id="获取锁"><a href="#获取锁" class="headerlink" title="获取锁"></a>获取锁</h3><p>调用RedissonClient的getLock方法获取锁</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Returns Lock instance by name.</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> * Implements a &lt;b&gt;non-fair&lt;/b&gt; locking so doesn&#x27;t guarantees an acquire order by threads.</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> * To increase reliability during failover, all operations wait for propagation to all Redis slaves.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> name - name of object</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> Lock object</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">RLock <span class="title function_">getLock</span><span class="params">(String name)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>getLock方法的实现,会返回一个RedissonLock</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RLock <span class="title function_">getLock</span><span class="params">(String name)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RedissonLock</span>(commandExecutor, name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="ReidssonLock和RLock"><a href="#ReidssonLock和RLock" class="headerlink" title="ReidssonLock和RLock"></a>ReidssonLock和RLock</h3><p>ReidssonLock实现了RLock接口<br>RLock.lock(); 是阻塞式等待的，默认加锁时间是30s；如果业务超长，运行期间会自动续期到30s。不用担心业务时间长，锁自动过期被删掉；加锁的业务只要运行完成，就不会给当前锁续期，即使不手动解锁，锁默认会在30s内自动过期，不会产生死锁问题；</p>
+<p>也可以自己指定解锁时间RLock.lock(10,TimeUnit.SECONDS)，10秒钟自动解锁，自己指定解锁时间redis不会自动续期；</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">public interface RLock extends Lock, RLockAsync &#123;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Returns name of object</span><br><span class="line">     *</span><br><span class="line">     * @return name - name of object</span><br><span class="line">     */</span><br><span class="line">    String getName();</span><br><span class="line">    </span><br><span class="line">    /**</span><br><span class="line">     * Acquires the lock with defined &lt;code&gt;leaseTime&lt;/code&gt;.</span><br><span class="line">     * Waits if necessary until lock became available.</span><br><span class="line">     *</span><br><span class="line">     * Lock will be released automatically after defined &lt;code&gt;leaseTime&lt;/code&gt; interval.</span><br><span class="line">     *</span><br><span class="line">     * @param leaseTime the maximum time to hold the lock after it&#x27;s acquisition,</span><br><span class="line">     *        if it hasn&#x27;t already been released by invoking &lt;code&gt;unlock&lt;/code&gt;.</span><br><span class="line">     *        If leaseTime is -1, hold the lock until explicitly unlocked.</span><br><span class="line">     * @param unit the time unit</span><br><span class="line">     * @throws InterruptedException - if the thread is interrupted</span><br><span class="line">     */</span><br><span class="line">    void lockInterruptibly(long leaseTime, TimeUnit unit) throws InterruptedException;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Tries to acquire the lock with defined &lt;code&gt;leaseTime&lt;/code&gt;.</span><br><span class="line">     * Waits up to defined &lt;code&gt;waitTime&lt;/code&gt; if necessary until the lock became available.</span><br><span class="line">     *</span><br><span class="line">     * Lock will be released automatically after defined &lt;code&gt;leaseTime&lt;/code&gt; interval.</span><br><span class="line">     *</span><br><span class="line">     * @param waitTime the maximum time to acquire the lock</span><br><span class="line">     * @param leaseTime lease time</span><br><span class="line">     * @param unit time unit</span><br><span class="line">     * @return &lt;code&gt;true&lt;/code&gt; if lock is successfully acquired,</span><br><span class="line">     *          otherwise &lt;code&gt;false&lt;/code&gt; if lock is already set.</span><br><span class="line">     * @throws InterruptedException - if the thread is interrupted</span><br><span class="line">     */</span><br><span class="line">    boolean tryLock(long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Acquires the lock with defined &lt;code&gt;leaseTime&lt;/code&gt;.</span><br><span class="line">     * Waits if necessary until lock became available.</span><br><span class="line">     *</span><br><span class="line">     * Lock will be released automatically after defined &lt;code&gt;leaseTime&lt;/code&gt; interval.</span><br><span class="line">     *</span><br><span class="line">     * @param leaseTime the maximum time to hold the lock after it&#x27;s acquisition,</span><br><span class="line">     *        if it hasn&#x27;t already been released by invoking &lt;code&gt;unlock&lt;/code&gt;.</span><br><span class="line">     *        If leaseTime is -1, hold the lock until explicitly unlocked.</span><br><span class="line">     * @param unit the time unit</span><br><span class="line">     *</span><br><span class="line">     */</span><br><span class="line">    void lock(long leaseTime, TimeUnit unit);</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Unlocks the lock independently of its state</span><br><span class="line">     *</span><br><span class="line">     * @return &lt;code&gt;true&lt;/code&gt; if lock existed and now unlocked</span><br><span class="line">     *          otherwise &lt;code&gt;false&lt;/code&gt;</span><br><span class="line">     */</span><br><span class="line">    boolean forceUnlock();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Checks if the lock locked by any thread</span><br><span class="line">     *</span><br><span class="line">     * @return &lt;code&gt;true&lt;/code&gt; if locked otherwise &lt;code&gt;false&lt;/code&gt;</span><br><span class="line">     */</span><br><span class="line">    boolean isLocked();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Checks if the lock is held by thread with defined &lt;code&gt;threadId&lt;/code&gt;</span><br><span class="line">     *</span><br><span class="line">     * @param threadId Thread ID of locking thread</span><br><span class="line">     * @return &lt;code&gt;true&lt;/code&gt; if held by thread with given id</span><br><span class="line">     *          otherwise &lt;code&gt;false&lt;/code&gt;</span><br><span class="line">     */</span><br><span class="line">    boolean isHeldByThread(long threadId);</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Checks if this lock is held by the current thread</span><br><span class="line">     *</span><br><span class="line">     * @return &lt;code&gt;true&lt;/code&gt; if held by current thread</span><br><span class="line">     * otherwise &lt;code&gt;false&lt;/code&gt;</span><br><span class="line">     */</span><br><span class="line">    boolean isHeldByCurrentThread();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Number of holds on this lock by the current thread</span><br><span class="line">     *</span><br><span class="line">     * @return holds or &lt;code&gt;0&lt;/code&gt; if this lock is not held by current thread</span><br><span class="line">     */</span><br><span class="line">    int getHoldCount();</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * Remaining time to live of the lock</span><br><span class="line">     *</span><br><span class="line">     * @return time in milliseconds</span><br><span class="line">     *          -2 if the lock does not exist.</span><br><span class="line">     *          -1 if the lock exists but has no associated expire.</span><br><span class="line">     */</span><br><span class="line">    long remainTimeToLive();</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行加锁操作</p>
+<ol>
+<li><pre><code>获取线程id
+</code></pre>
+</li>
+<li><pre><code>尝试获取锁
+</code></pre>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">lock</span><span class="params">(<span class="type">long</span> leaseTime, TimeUnit unit, <span class="type">boolean</span> interruptibly)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="type">long</span> <span class="variable">threadId</span> <span class="operator">=</span> Thread.currentThread().getId();</span><br><span class="line">        <span class="comment">//先尝试一下获取锁</span></span><br><span class="line">        <span class="type">Long</span> <span class="variable">ttl</span> <span class="operator">=</span> tryAcquire(-<span class="number">1</span>, leaseTime, unit, threadId);</span><br><span class="line">        <span class="comment">// lock acquired</span></span><br><span class="line">        <span class="comment">//获取到锁直接返回</span></span><br><span class="line">        <span class="keyword">if</span> (ttl == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        CompletableFuture&lt;RedissonLockEntry&gt; future = subscribe(threadId);</span><br><span class="line">        <span class="keyword">if</span> (interruptibly) &#123;</span><br><span class="line">            commandExecutor.syncSubscriptionInterrupted(future);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            commandExecutor.syncSubscription(future);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">                ttl = tryAcquire(-<span class="number">1</span>, leaseTime, unit, threadId);</span><br><span class="line">                <span class="comment">// lock acquired</span></span><br><span class="line">                <span class="keyword">if</span> (ttl == <span class="literal">null</span>) &#123;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// waiting for message</span></span><br><span class="line">                <span class="keyword">if</span> (ttl &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        commandExecutor.getNow(future).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (interruptibly) &#123;</span><br><span class="line">                            <span class="keyword">throw</span> e;</span><br><span class="line">                        &#125;</span><br><span class="line">                        commandExecutor.getNow(future).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> (interruptibly) &#123;</span><br><span class="line">                        commandExecutor.getNow(future).getLatch().acquire();</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        commandExecutor.getNow(future).getLatch().acquireUninterruptibly();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            unsubscribe(commandExecutor.getNow(future), threadId);</span><br><span class="line">        &#125;</span><br><span class="line"><span class="comment">//        get(lockAsync(leaseTime, unit));</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>尝试获取锁的代码<br>如果没有指定锁的持有时间，则默认使用**internalLockLeaseTime(30s)**作为锁的持有时间，该参数在RedissonLock初始化的时候从Reidsson的配置文件中获取</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> &lt;T&gt; RFuture&lt;Long&gt; <span class="title function_">tryAcquireAsync</span><span class="params">(<span class="type">long</span> waitTime, <span class="type">long</span> leaseTime, TimeUnit unit, <span class="type">long</span> threadId)</span> &#123;</span><br><span class="line">    RFuture&lt;Long&gt; ttlRemainingFuture;</span><br><span class="line">    <span class="keyword">if</span> (leaseTime != -<span class="number">1</span>) &#123;</span><br><span class="line">        ttlRemainingFuture = tryLockInnerAsync(waitTime, leaseTime, unit, threadId, RedisCommands.EVAL_LONG);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ttlRemainingFuture = tryLockInnerAsync(waitTime, internalLockLeaseTime,</span><br><span class="line">                TimeUnit.MILLISECONDS, threadId, RedisCommands.EVAL_LONG);</span><br><span class="line">    &#125;</span><br><span class="line">    CompletionStage&lt;Long&gt; f = ttlRemainingFuture.thenApply(ttlRemaining -&gt; &#123;</span><br><span class="line">        <span class="comment">// lock acquired</span></span><br><span class="line">        <span class="comment">// ttlRemaining代表获取到了锁，从下面的方法可以看出</span></span><br><span class="line">        <span class="keyword">if</span> (ttlRemaining == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (leaseTime != -<span class="number">1</span>) &#123;</span><br><span class="line">                internalLockLeaseTime = unit.toMillis(leaseTime);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">//没有指定释放时间，会进行锁续约</span></span><br><span class="line">                scheduleExpirationRenewal(threadId);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ttlRemaining;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">CompletableFutureWrapper</span>&lt;&gt;(f);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>加锁方法，这里的加锁和setnx不一样<br>使用的lua脚本，一样有原子性<br>KEY[1]: 锁的key名称<br>ARGV[2]: 为线程id<br>ARGV[1]: 为设置的过期时间</p>
+<ol>
+<li><pre><code>判断key是否存在  
+</code></pre>
+1.1 当key不存在时，调用hincrby,创建一个hash结构，并对该hash结构的以线程id为key的值进行自增1<br>1.2 设置该key的过期时间，pexpire（pexpire是毫秒级的过期时间，expire是秒级的过期时间）</li>
+<li><pre><code>如果key值存在  
+</code></pre>
+2.1 查找该hash结构对应的线程id是否存在，如果存在则进行自增<br>2.2 并重新设置过期时间</li>
+<li><pre><code>如果key值存在，但对应的线程id不存在，则返回该key的过期时间，代表改锁已被其他线程占有
+</code></pre>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;T&gt; RFuture&lt;T&gt; <span class="title function_">tryLockInnerAsync</span><span class="params">(<span class="type">long</span> waitTime, <span class="type">long</span> leaseTime, TimeUnit unit, <span class="type">long</span> threadId, RedisStrictCommand&lt;T&gt; command)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> evalWriteAsync(getRawName(), LongCodec.INSTANCE, command,</span><br><span class="line">                <span class="string">&quot;if (redis.call(&#x27;exists&#x27;, KEYS[1]) == 0) then &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;redis.call(&#x27;hincrby&#x27;, KEYS[1], ARGV[2], 1); &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;redis.call(&#x27;pexpire&#x27;, KEYS[1], ARGV[1]); &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;return nil; &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;end; &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;if (redis.call(&#x27;hexists&#x27;, KEYS[1], ARGV[2]) == 1) then &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;redis.call(&#x27;hincrby&#x27;, KEYS[1], ARGV[2], 1); &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;redis.call(&#x27;pexpire&#x27;, KEYS[1], ARGV[1]); &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;return nil; &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;end; &quot;</span> +</span><br><span class="line">                        <span class="string">&quot;return redis.call(&#x27;pttl&#x27;, KEYS[1]);&quot;</span>,</span><br><span class="line">                Collections.singletonList(getRawName()), unit.toMillis(leaseTime), getLockName(threadId));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="看门狗机制"><a href="#看门狗机制" class="headerlink" title="看门狗机制"></a>看门狗机制</h3><p>触发条件，在调用RLock.lock时会触发，如果指定了锁的释放时间，则不会自动需要</p>
+<p>续约方法的入口<br>会判断当前要续约的对象是否已经存在，如果已经存在，则把当前id加入；如果不存在创建一个新的，并调用新的续约操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">protected void scheduleExpirationRenewal(long threadId) &#123;</span><br><span class="line">        ExpirationEntry entry = new ExpirationEntry();</span><br><span class="line">        ExpirationEntry oldEntry = EXPIRATION_RENEWAL_MAP.putIfAbsent(getEntryName(), entry);//EXPIRATION_RENEWAL_MAP是属于类`RedissonBaseLock`的变量</span><br><span class="line">        if (oldEntry != null) &#123;</span><br><span class="line">            oldEntry.addThreadId(threadId);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            entry.addThreadId(threadId);</span><br><span class="line">            try &#123;</span><br><span class="line">                //新的续约操作</span><br><span class="line">                renewExpiration();</span><br><span class="line">            &#125; finally &#123;</span><br><span class="line">                if (Thread.currentThread().isInterrupted()) &#123;</span><br><span class="line">                    cancelExpirationRenewal(threadId);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>EXPIRATION_RENEWAL_MAP是属于类的变量</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">private static final ConcurrentMap&lt;String, ExpirationEntry&gt; EXPIRATION_RENEWAL_MAP = new ConcurrentHashMap&lt;&gt;();</span><br></pre></td></tr></table></figure>
+
+<h4 id="renewExpiration"><a href="#renewExpiration" class="headerlink" title="renewExpiration"></a>renewExpiration</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">private void renewExpiration() &#123;</span><br><span class="line">        ExpirationEntry ee = EXPIRATION_RENEWAL_MAP.get(getEntryName());</span><br><span class="line">        if (ee == null) &#123;</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line">        //添加延时任务，这里的定时任务使用的是hash轮</span><br><span class="line">        Timeout task = commandExecutor.getConnectionManager().newTimeout(new TimerTask() &#123;</span><br><span class="line">            @Override</span><br><span class="line">            public void run(Timeout timeout) throws Exception &#123;</span><br><span class="line">                ExpirationEntry ent = EXPIRATION_RENEWAL_MAP.get(getEntryName());</span><br><span class="line">                //进行一些参数校验</span><br><span class="line">                if (ent == null) &#123;</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">                //进行一些参数校验</span><br><span class="line">                Long threadId = ent.getFirstThreadId();</span><br><span class="line">                if (threadId == null) &#123;</span><br><span class="line">                    return;</span><br><span class="line">                &#125;</span><br><span class="line">                //进行续约操作，判断当前锁和对应的线程是否存在，如果存在则执行续约操作</span><br><span class="line">                RFuture&lt;Boolean&gt; future = renewExpirationAsync(threadId);</span><br><span class="line">                //成功后的回调</span><br><span class="line">                future.whenComplete((res, e) -&gt; &#123;</span><br><span class="line">                    if (e != null) &#123;</span><br><span class="line">                        log.error(&quot;Can&#x27;t update lock &quot; + getRawName() + &quot; expiration&quot;, e);</span><br><span class="line">                        //如果报错了则从续约操作中移除</span><br><span class="line">                        EXPIRATION_RENEWAL_MAP.remove(getEntryName());</span><br><span class="line">                        return;</span><br><span class="line">                    &#125;</span><br><span class="line">                    </span><br><span class="line">                    if (res) &#123;</span><br><span class="line">                        // reschedule itself</span><br><span class="line">                        //继续调用，添加延时任务</span><br><span class="line">                        renewExpiration();</span><br><span class="line">                    &#125; else &#123;</span><br><span class="line">                        //从延时任务中移除</span><br><span class="line">                        cancelExpirationRenewal(null);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;</span><br><span class="line">        //续约间隔，为1/3</span><br><span class="line">        &#125;, internalLockLeaseTime / 3, TimeUnit.MILLISECONDS);</span><br><span class="line">        </span><br><span class="line">        ee.setTimeout(task);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="UnLock释放锁操作"><a href="#UnLock释放锁操作" class="headerlink" title="UnLock释放锁操作"></a>UnLock释放锁操作</h3><p>释放锁的实际调用方法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public RFuture&lt;Void&gt; unlockAsync(long threadId) &#123;</span><br><span class="line">    RFuture&lt;Boolean&gt; future = unlockInnerAsync(threadId);</span><br><span class="line"></span><br><span class="line">    CompletionStage&lt;Void&gt; f = future.handle((opStatus, e) -&gt; &#123;</span><br><span class="line">        //取消续约，将该线程id从map中移除，如果map中的锁也为空了，则将锁记录也移除</span><br><span class="line">        cancelExpirationRenewal(threadId);</span><br><span class="line"></span><br><span class="line">        if (e != null) &#123;</span><br><span class="line">            throw new CompletionException(e);</span><br><span class="line">        &#125;</span><br><span class="line">        if (opStatus == null) &#123;</span><br><span class="line">            IllegalMonitorStateException cause = new IllegalMonitorStateException(&quot;attempt to unlock lock, not locked by current thread by node id: &quot;</span><br><span class="line">                    + id + &quot; thread-id: &quot; + threadId);</span><br><span class="line">            throw new CompletionException(cause);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        return null;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    return new CompletableFutureWrapper&lt;&gt;(f);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="面试题"><a href="#面试题" class="headerlink" title="面试题"></a>面试题</h2><h3 id="Reidsson的锁用的是setnx吗"><a href="#Reidsson的锁用的是setnx吗" class="headerlink" title="Reidsson的锁用的是setnx吗"></a>Reidsson的锁用的是setnx吗</h3><p>不是，Reidsson使用的是lua脚本，使用的结构是hash结构，方便其实现一些可重入锁，读写锁的特性</p>
+<h3 id="Redisson的默认锁持有时间是多久"><a href="#Redisson的默认锁持有时间是多久" class="headerlink" title="Redisson的默认锁持有时间是多久"></a>Redisson的默认锁持有时间是多久</h3><p>30s</p>
+<h3 id="Redisson看门狗锁的续约时间是多久"><a href="#Redisson看门狗锁的续约时间是多久" class="headerlink" title="Redisson看门狗锁的续约时间是多久"></a>Redisson看门狗锁的续约时间是多久</h3><p>锁持有时间的三分之一</p>
+<h3 id="Redssion什么时候会进行续约"><a href="#Redssion什么时候会进行续约" class="headerlink" title="Redssion什么时候会进行续约"></a>Redssion什么时候会进行续约</h3><p>在没有指定锁持有时间的时候会自动续约</p>
+</div>
+        </div>
+        
+        <footer class="kratos-entry-footer clearfix">
+            
+            
+            
+                <div class="post-actions text-center clearfix" id="post-actions">
+                
+                    <a class="donate" href="javascript:;" onclick="krOpenDonateModal()"><i class="fa fa-bitcoin"></i> 打赏</a>
+                
+                
+                    <a class="share" href="javascript:;" onclick="krOpenShareModal()"><i class="fa fa-share-alt"></i> 分享</a>
+                
+                </div>
+            
+            <div class="footer-tag clearfix">
+                <div class="pull-left">
+                <i class="fa fa-tags"></i>
+                    <a class="tag-none-link" href="/%E6%A0%87%E7%AD%BE/java/" rel="tag">java</a>
+                </div>
+                <div class="pull-date">
+                    <time datetime="2025-02-20T08:51:11.334Z" itemprop="dateModified">最后编辑：2025-02-20</time>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+        <nav class="navigation post-navigation clearfix" role="navigation">
+            
+            <div class="nav-previous clearfix">
+                <a title=" Centos7添加ip白名单" href="/2022/06/16/Centos7添加ip白名单/"><i class="fa fa-angle-left"></i> 上一篇</a>
+            </div>
+            
+            
+            <div class="nav-next clearfix">
+                <a title=" k8s-nfs" href="/2022/12/05/k8s-nfs/">下一篇 <i class="fa fa-angle-right"></i></a>
+            </div>
+            
+        </nav>
+    
+    
+</article>
+
+        
+
+            </section>
+
+            
+                
+
+<section id="kratos-widget-area" class="col-md-4 hidden-xs hidden-sm">
+    <!-- 文章和页面根据splitter来分割，没有的话就从头开始设置为sticky -->
+    
+        <div class="sticky-area">
+    
+    
+    </div>
+</section>
+            
+
+        
+
+                </div>
+    </div>
+</div>
+
+<footer>
+    <div id="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 footer-list text-center">
+                    <ul class="kratos-social-icons">
+                        
+                    </ul>
+                    <ul class="kratos-copyright">
+                        <div>
+                            <li>&copy; 2025 Hexo 版权所有.</li>
+                            <li>本站已运行<span id="kr-since">Loading...</span></li>
+                        </div>
+                        <div>
+                            <li>自豪地使用 <a href="https://github.com/Candinya/Kratos-Rebirth" target="_blank">Kratos:Rebirth</a> 主题</li>
+                            <li>站点由 John Doe 用 <i class="fa fa-heart" style="color:#d43f57"></i> 搭建</li>
+                        </div>
+                        <!-- 额外的追加注入项 -->
+                        
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="kr-tool text-center">
+            <div class="tool">
+                
+                    <div class="box search-box">
+                        <a href="/search">
+                            <span class="fa fa-search"></span>
+                        </a>
+                    </div>
+                
+                <div class="box theme-box" id="theme-toggle">
+                    <span class="fa fa-adjust"></span>
+                </div>
+            </div>
+            <div id="gotop-box" class="box gotop-box">
+                <span class="fa fa-chevron-up"></span>
+            </div>
+        </div>
+    </div>
+</footer>
+</div>
+</div>
+
+
+    <div id="kr-donate-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseDonateModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-bitcoin"></i>
+            </div>
+            <div class="kr-modal-title">打赏</div>
+            <button class="kr-modal-close" onclick="krCloseDonateModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-donate-message">打赏提示信息</div>
+            <div class="kr-donate-qr" id="kr-donate-qr">
+                
+            </div>
+            <div class="kr-donate-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/donate.min.js"></script>
+
+
+
+
+    <div id="kr-share-modal" class="kr-modal">
+    <div class="kr-modal-bg" onclick="krCloseShareModal()"></div>
+    <div class="kr-modal-content">
+        <div class="kr-modal-header">
+            <div class="kr-modal-icon">
+                <i class="fa fa-share-alt"></i>
+            </div>
+            <div class="kr-modal-title">分享</div>
+            <button class="kr-modal-close" onclick="krCloseShareModal()">
+                <i class="fa fa-times-circle"></i>
+            </button>
+        </div>
+        <div class="kr-modal-body">
+            <div class="kr-share-message">分享提示信息</div>
+            <div class="kr-share-qr" id="kr-share-qr"></div>
+            <div class="kr-share-platforms">
+                
+            </div>
+        </div>
+    </div>
+</div>
+<script defer src="/js/kr-modal/share.min.js"></script>
+
+
+
+<!-- 额外的追加注入项 -->
+
+
+        <script>
+    if (!window.kr) {
+        window.kr = {};
+    }
+    window.kr.notMobile = (!(navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    window.kr.siteRoot = "/";
+</script>
+
+
+  <script defer src="/vendors/nprogress@0.2.0/nprogress.js"></script>
+
+
+
+  <script defer src="/vendors/viewerjs@1.11.6/dist/viewer.min.js"></script>
+
+
+<script defer src="/js/kr-core.min.js"></script>
+
+
+  <script defer src="/js/kr-pjax.min.js"></script>
+
+
+<!-- 额外的追加注入项 -->
+
+
+    </body>
+</html>
