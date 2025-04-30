@@ -21,15 +21,15 @@
   <meta name="author" content="huisunan">
   <meta name="keywords" content="">
   
-    <meta name="description" content="经常会碰到实现了序列化接口，但是忘记添加序列化id，导致线上的数据无法被正常的反序列化 使用CompatibleInputStream代替ObjectInputStream &#x2F;**  * 处理 jdk 序列化反序列化时，uid不一样的情况  *&#x2F; @Slf4j public class CompatibleInputStream extends ObjectInputStream &#123;">
+    <meta name="description" content="经常会碰到实现了序列化接口，但是忘记添加序列化id，导致线上的数据无法被正常的反序列化 使用CompatibleInputStream代替ObjectInputStream 12345678910111213141516171819202122232425262728293031&#x2F;** * 处理 jdk 序列化反序列化时，uid不一样的情况 *&#x2F;@Slf4jpublic class Compati">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java屏蔽序列化版本不一致异常">
 <meta property="og:url" content="https://huisunan.github.io/2025/04/28/Java%E5%B1%8F%E8%94%BD%E5%BA%8F%E5%88%97%E5%8C%96%E7%89%88%E6%9C%AC%E4%B8%8D%E4%B8%80%E8%87%B4%E5%BC%82%E5%B8%B8/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="经常会碰到实现了序列化接口，但是忘记添加序列化id，导致线上的数据无法被正常的反序列化 使用CompatibleInputStream代替ObjectInputStream &#x2F;**  * 处理 jdk 序列化反序列化时，uid不一样的情况  *&#x2F; @Slf4j public class CompatibleInputStream extends ObjectInputStream &#123;">
+<meta property="og:description" content="经常会碰到实现了序列化接口，但是忘记添加序列化id，导致线上的数据无法被正常的反序列化 使用CompatibleInputStream代替ObjectInputStream 12345678910111213141516171819202122232425262728293031&#x2F;** * 处理 jdk 序列化反序列化时，uid不一样的情况 *&#x2F;@Slf4jpublic class Compati">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-04-28T11:02:45.000Z">
-<meta property="article:modified_time" content="2025-04-28T23:53:27.640Z">
+<meta property="article:modified_time" content="2025-04-30T13:19:51.266Z">
 <meta property="article:author" content="huisunan">
 <meta property="article:tag" content="java">
 <meta name="twitter:card" content="summary_large_image">
@@ -74,7 +74,7 @@
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
     Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"huisunan.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"java"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":"kirGgvEYclcl86I9fLdvAFUL-MdYXbMMI","app_key":"AbYNHl8j94rQfo1Kbee5omyi","server_url":null,"path":"window.location.pathname","ignore_local":true},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+    var CONFIG = {"hostname":"huisunan.github.io","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"java"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":"G-R3HLPQYGH9"},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":"kirGgvEYclcl86I9fLdvAFUL-MdYXbMMI","app_key":"AbYNHl8j94rQfo1Kbee5omyi","server_url":null,"path":"window.location.pathname","ignore_local":true},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
 
     if (CONFIG.web_analytics.follow_dnt) {
       var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
@@ -87,6 +87,20 @@
 
   
 
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=G-R3HLPQYGH9", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', 'G-R3HLPQYGH9');
+        });
+      }
+    </script>
   
 
   
@@ -290,37 +304,7 @@
                 
                 <p>经常会碰到实现了序列化接口，但是忘记添加序列化id，导致线上的数据无法被正常的反序列化</p>
 <p>使用CompatibleInputStream代替ObjectInputStream</p>
-<div class="code-wrapper"><pre><code class="hljs Java"><span class="hljs-comment">/**</span>
-<span class="hljs-comment"> * 处理 jdk 序列化反序列化时，uid不一样的情况</span>
-<span class="hljs-comment"> */</span>
-<span class="hljs-meta">@Slf4j</span>
-<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CompatibleInputStream</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">ObjectInputStream</span> &#123;
-	<span class="hljs-keyword">public</span> <span class="hljs-title function_">CompatibleInputStream</span><span class="hljs-params">(InputStream in)</span> <span class="hljs-keyword">throws</span> IOException &#123;
-		<span class="hljs-built_in">super</span>(in);
-	&#125;
-
-
-	<span class="hljs-meta">@Override</span>
-	<span class="hljs-keyword">protected</span> ObjectStreamClass <span class="hljs-title function_">readClassDescriptor</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException &#123;
-		<span class="hljs-type">ObjectStreamClass</span> <span class="hljs-variable">resultClassDescriptor</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">super</span>.readClassDescriptor(); <span class="hljs-comment">// initially streams descriptor</span>
-		Class localClass; <span class="hljs-comment">// the class in the local JVM that this descriptor represents.</span>
-		<span class="hljs-keyword">try</span> &#123;
-			localClass = Class.forName(resultClassDescriptor.getName());
-		&#125; <span class="hljs-keyword">catch</span> (ClassNotFoundException e) &#123;
-			<span class="hljs-keyword">return</span> resultClassDescriptor;
-		&#125;
-		<span class="hljs-type">ObjectStreamClass</span> <span class="hljs-variable">localClassDescriptor</span> <span class="hljs-operator">=</span> ObjectStreamClass.lookup(localClass);
-		<span class="hljs-keyword">if</span> (localClassDescriptor != <span class="hljs-literal">null</span>) &#123; <span class="hljs-comment">// only if class implements serializable</span>
-			<span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">localSUID</span> <span class="hljs-operator">=</span> localClassDescriptor.getSerialVersionUID();
-			<span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">streamSUID</span> <span class="hljs-operator">=</span> resultClassDescriptor.getSerialVersionUID();
-			<span class="hljs-keyword">if</span> (streamSUID != localSUID) &#123; <span class="hljs-comment">// check for serialVersionUID mismatch.</span>
-				log.warn(<span class="hljs-string">&quot;Overriding serialized class version mismatch: local serialVersionUID = [&#123;&#125;] stream serialVersionUID = [&#123;&#125;]&quot;</span>, localSUID, streamSUID);
-				resultClassDescriptor = localClassDescriptor; <span class="hljs-comment">// Use local class descriptor for deserialization</span>
-			&#125;
-		&#125;
-		<span class="hljs-keyword">return</span> resultClassDescriptor;
-	&#125;
-&#125;</code></pre></div>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 处理 jdk 序列化反序列化时，uid不一样的情况</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">@Slf4j</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CompatibleInputStream</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">ObjectInputStream</span> &#123;<br>	<span class="hljs-keyword">public</span> <span class="hljs-title function_">CompatibleInputStream</span><span class="hljs-params">(InputStream in)</span> <span class="hljs-keyword">throws</span> IOException &#123;<br>		<span class="hljs-built_in">super</span>(in);<br>	&#125;<br><br><br>	<span class="hljs-meta">@Override</span><br>	<span class="hljs-keyword">protected</span> ObjectStreamClass <span class="hljs-title function_">readClassDescriptor</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException &#123;<br>		<span class="hljs-type">ObjectStreamClass</span> <span class="hljs-variable">resultClassDescriptor</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">super</span>.readClassDescriptor(); <span class="hljs-comment">// initially streams descriptor</span><br>		Class localClass; <span class="hljs-comment">// the class in the local JVM that this descriptor represents.</span><br>		<span class="hljs-keyword">try</span> &#123;<br>			localClass = Class.forName(resultClassDescriptor.getName());<br>		&#125; <span class="hljs-keyword">catch</span> (ClassNotFoundException e) &#123;<br>			<span class="hljs-keyword">return</span> resultClassDescriptor;<br>		&#125;<br>		<span class="hljs-type">ObjectStreamClass</span> <span class="hljs-variable">localClassDescriptor</span> <span class="hljs-operator">=</span> ObjectStreamClass.lookup(localClass);<br>		<span class="hljs-keyword">if</span> (localClassDescriptor != <span class="hljs-literal">null</span>) &#123; <span class="hljs-comment">// only if class implements serializable</span><br>			<span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">localSUID</span> <span class="hljs-operator">=</span> localClassDescriptor.getSerialVersionUID();<br>			<span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">streamSUID</span> <span class="hljs-operator">=</span> resultClassDescriptor.getSerialVersionUID();<br>			<span class="hljs-keyword">if</span> (streamSUID != localSUID) &#123; <span class="hljs-comment">// check for serialVersionUID mismatch.</span><br>				log.warn(<span class="hljs-string">&quot;Overriding serialized class version mismatch: local serialVersionUID = [&#123;&#125;] stream serialVersionUID = [&#123;&#125;]&quot;</span>, localSUID, streamSUID);<br>				resultClassDescriptor = localClassDescriptor; <span class="hljs-comment">// Use local class descriptor for deserialization</span><br>			&#125;<br>		&#125;<br>		<span class="hljs-keyword">return</span> resultClassDescriptor;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
                 
               </div>
             
