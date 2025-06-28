@@ -4,6 +4,44 @@
   
   
   <entry>
+    <title>自建openVpn 双向通信</title>
+    <link href="/2025/06/28/%E8%87%AA%E5%BB%BAopenVpn-%E5%8F%8C%E5%90%91%E9%80%9A%E4%BF%A1/"/>
+    <url>/2025/06/28/%E8%87%AA%E5%BB%BAopenVpn-%E5%8F%8C%E5%90%91%E9%80%9A%E4%BF%A1/</url>
+    
+    <content type="html"><![CDATA[<p>已经搭建好openvpn as服务器,此文章主要解决双向通信的问题</p><p>openvpn as 如果是docker部署的，推荐network_mode修改为host</p><blockquote><p>公司网段: 10.88.0.0&#x2F;19</p><p>vpn网段: 10.88.32.0&#x2F;20</p><p>openvpn ip: 10.88.1.4</p></blockquote><p>目前 vpn网段已经支持</p><h2 id="添加vpn客户端访问公司网段的权限"><a href="#添加vpn客户端访问公司网段的权限" class="headerlink" title="添加vpn客户端访问公司网段的权限"></a>添加vpn客户端访问公司网段的权限</h2><p><img src="/../images/vpn-setting.png"></p><h2 id="添加公司网段内机器访问openvpn客户端机器"><a href="#添加公司网段内机器访问openvpn客户端机器" class="headerlink" title="添加公司网段内机器访问openvpn客户端机器"></a>添加公司网段内机器访问openvpn客户端机器</h2><p>在路由器上添加路由表</p><p>10.88.32.0&#x2F;20 —&gt;  10.88.1.4</p><p>openvpn所在机器开启 </p><p>服务器上开启转发</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">echo &#x27;net.ipv4.ip_forward = 1&#x27; &gt;&gt; /etc/sysctl.conf<br>sysctl -p<br></code></pre></td></tr></table></figure><p>查看一下路由表</p><p><img src="/../images/vpn-setting-2.png"></p><p>在AS0_OUT_S2C 前添加一个转发策略</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">iptables -I FORWARD 3 -d 10.88.32.0/20 -j ACCEPT<br></code></pre></td></tr></table></figure><h2 id="为什么在AS0-OUT-S2C前添加转发策略"><a href="#为什么在AS0-OUT-S2C前添加转发策略" class="headerlink" title="为什么在AS0_OUT_S2C前添加转发策略"></a>为什么在AS0_OUT_S2C前添加转发策略</h2><p><img src="/../images/vpn-setting-3.png" alt="img.png"></p><p>追踪一下链路会发现，请求中没有标识的会被直接drop掉，导致转发失败</p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>openvpn</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>pt-online-schema-change使用</title>
+    <link href="/2025/05/21/pt-online-schema-change%E4%BD%BF%E7%94%A8/"/>
+    <url>/2025/05/21/pt-online-schema-change%E4%BD%BF%E7%94%A8/</url>
+    
+    <content type="html"><![CDATA[<p>不查询副本</p><p>–recursion-method&#x3D;NONE </p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>mysql</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>Jackson JsonAnyGetter 字段和引用类冲突解</title>
     <link href="/2025/04/30/%E5%AD%97%E6%AE%B5%E5%92%8C%E5%BC%95%E7%94%A8%E7%B1%BB%E5%86%B2%E7%AA%81%E8%A7%A3%E5%86%B3/"/>
     <url>/2025/04/30/%E5%AD%97%E6%AE%B5%E5%92%8C%E5%BC%95%E7%94%A8%E7%B1%BB%E5%86%B2%E7%AA%81%E8%A7%A3%E5%86%B3/</url>
