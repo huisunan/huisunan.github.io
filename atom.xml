@@ -6,7 +6,7 @@
   <link href="https://huisunan.github.io/atom.xml" rel="self"/>
   
   <link href="https://huisunan.github.io/"/>
-  <updated>2025-08-05T16:06:26.815Z</updated>
+  <updated>2025-08-05T16:09:45.780Z</updated>
   <id>https://huisunan.github.io/</id>
   
   <author>
@@ -21,15 +21,14 @@
     <link href="https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/"/>
     <id>https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/</id>
     <published>2025-08-05T16:04:10.000Z</published>
-    <updated>2025-08-05T16:06:26.815Z</updated>
+    <updated>2025-08-05T16:09:45.780Z</updated>
     
-    <content type="html"><![CDATA[<p>ctr images push xxx.com.cn&#x2F;xxx&#x2F;dddd:2.11.37 –skip-verify&#x3D;true –user admin:admin –plain-http</p>]]></content>
+    <content type="html"><![CDATA[<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><br>ctr images push xxx.com.cn/xxx/dddd:2.11.37 --skip-verify=true --user admin:admin --plain-http<br><br></code></pre></td></tr></table></figure>]]></content>
     
     
       
       
-    <summary type="html">&lt;p&gt;ctr images push xxx.com.cn&amp;#x2F;xxx&amp;#x2F;dddd:2.11.37 –skip-verify&amp;#x3D;true –user admin:admin –plain-http&lt;/p&gt;
-</summary>
+    <summary type="html">&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class</summary>
       
     
     

@@ -8,7 +8,7 @@
     <link href="/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/"/>
     <url>/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/</url>
     
-    <content type="html"><![CDATA[<p>ctr images push xxx.com.cn&#x2F;xxx&#x2F;dddd:2.11.37 –skip-verify&#x3D;true –user admin:admin –plain-http</p>]]></content>
+    <content type="html"><![CDATA[<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><br>ctr images push xxx.com.cn/xxx/dddd:2.11.37 --skip-verify=true --user admin:admin --plain-http<br><br></code></pre></td></tr></table></figure>]]></content>
     
     
     
