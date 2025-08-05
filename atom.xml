@@ -6,7 +6,7 @@
   <link href="https://huisunan.github.io/atom.xml" rel="self"/>
   
   <link href="https://huisunan.github.io/"/>
-  <updated>2025-06-28T15:27:06.746Z</updated>
+  <updated>2025-08-05T16:06:26.815Z</updated>
   <id>https://huisunan.github.io/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>containerd推送镜像</title>
+    <link href="https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/"/>
+    <id>https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/</id>
+    <published>2025-08-05T16:04:10.000Z</published>
+    <updated>2025-08-05T16:06:26.815Z</updated>
+    
+    <content type="html"><![CDATA[<p>ctr images push xxx.com.cn&#x2F;xxx&#x2F;dddd:2.11.37 –skip-verify&#x3D;true –user admin:admin –plain-http</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;ctr images push xxx.com.cn&amp;#x2F;xxx&amp;#x2F;dddd:2.11.37 –skip-verify&amp;#x3D;true –user admin:admin –plain-http&lt;/p&gt;
+</summary>
+      
+    
+    
+    
+    
+    <category term="containerd" scheme="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/containerd/"/>
+    
+  </entry>
   
   <entry>
     <title>自建openVpn 双向通信</title>
@@ -475,32 +498,6 @@
     
     
     <category term="ops" scheme="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/ops/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>helm kibana 8.5.1 安装</title>
-    <link href="https://huisunan.github.io/2022/12/06/helm%20kibana%208.5.1%20%E5%AE%89%E8%A3%85/"/>
-    <id>https://huisunan.github.io/2022/12/06/helm%20kibana%208.5.1%20%E5%AE%89%E8%A3%85/</id>
-    <published>2022-12-05T17:09:00.000Z</published>
-    <updated>2025-04-28T14:17:08.932Z</updated>
-    
-    <content type="html"><![CDATA[<span id="more"></span><p>helm应用名使用kibana</p><p>清除命令</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">kubectl delete configmap kibana-kibana-helm-scripts -n elastic</span><br><span class="line">kubectl delete serviceaccount pre-install-kibana-kibana -n elastic</span><br><span class="line">kubectl delete roles pre-install-kibana-kibana -n elastic</span><br><span class="line">kubectl delete rolebindings pre-install-kibana-kibana -n elastic</span><br><span class="line">kubectl delete job pre-install-kibana-kibana -n elastic</span><br><span class="line"></span><br><span class="line">kubectl delete serviceaccount post-delete-kibana-kibana -n elastic</span><br><span class="line">kubectl delete roles post-delete-kibana-kibana -n elastic</span><br><span class="line">kubectl delete rolebindings post-delete-kibana-kibana -n elastic</span><br><span class="line">kubectl delete job post-delete-kibana-kibana -n elastic</span><br></pre></td></tr></table></figure>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
-
-&lt;p&gt;helm应用名使用kibana&lt;/p&gt;
-&lt;p&gt;清除命令&lt;/p&gt;
-&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;</summary>
-      
-    
-    
-    
-    
-    <category term="es" scheme="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/es/"/>
     
   </entry>
   
