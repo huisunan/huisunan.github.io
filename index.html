@@ -104,6 +104,7 @@
 
   
 <meta name="generator" content="Hexo 7.3.0"><link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+<link rel="alternate" href="/rss2.xml" title="Hexo" type="application/rss+xml">
 </head>
 
 
@@ -238,6 +239,73 @@
               <div class="col-12 col-md-10 m-auto">
                 
 
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/08/14/%E8%A7%A3%E5%86%B3-SLF4J-%E5%A4%9A%E6%8F%90%E4%BE%9B%E8%80%85%E5%86%B2%E7%AA%81%EF%BC%9A%E8%AE%A9-TLogLogbackSLF4JServiceProvider-%E7%94%9F%E6%95%88%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/" target="_self">
+          解决SLF4J多提供者冲突：让TLogLogbackSLF4JServiceProvider生效的几种方式
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/08/14/%E8%A7%A3%E5%86%B3-SLF4J-%E5%A4%9A%E6%8F%90%E4%BE%9B%E8%80%85%E5%86%B2%E7%AA%81%EF%BC%9A%E8%AE%A9-TLogLogbackSLF4JServiceProvider-%E7%94%9F%E6%95%88%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/" target="_self">
+        <div>
+          在使用TLog分布式日志追踪框架时，你可能会遇到一个棘手的问题：其他应用能正常输出%-17X&#123;tl&#125;追踪标识，唯独某个应用无法输出。排查后发现SLF4J日志中存在”多个提供者”的警告，这往往是问题的核心。本文将归纳解决这一问题的具体方案，重点说明如何让TLog的TLogLogbackSLF4JServiceProvider成为SLF4J的实际提供者。 一、问题根源：SLF4J提
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-08-14 10:00" pubdate>
+              2025-08-14
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E6%9C%AF%E6%8E%92%E6%9F%A5/" class="category-chain-item">技术排查</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/%E6%A0%87%E7%AD%BE/Java/">#Java</a>
+            
+              <a href="/%E6%A0%87%E7%AD%BE/%E6%97%A5%E5%BF%97%E6%A1%86%E6%9E%B6/">#日志框架</a>
+            
+              <a href="/%E6%A0%87%E7%AD%BE/SLF4J/">#SLF4J</a>
+            
+              <a href="/%E6%A0%87%E7%AD%BE/TLog/">#TLog</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
 
   <div class="row mx-auto index-card">
     
@@ -587,46 +655,6 @@
             <i class="iconfont icon-tags"></i>
             
               <a href="/%E6%A0%87%E7%AD%BE/other/">#other</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2024/04/11/%E6%89%B9%E9%87%8F%E4%BF%AE%E6%94%B9%E5%AD%97%E6%AE%B5%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E8%A1%A8%E8%A1%A8%E5%AD%97%E7%AC%A6%E9%9B%86%EF%BC%8Csql%E7%94%9F%E6%88%90/" target="_self">
-          批量修改字段字符集和表表字符集，sql生成
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/11/%E6%89%B9%E9%87%8F%E4%BF%AE%E6%94%B9%E5%AD%97%E6%AE%B5%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E8%A1%A8%E8%A1%A8%E5%AD%97%E7%AC%A6%E9%9B%86%EF%BC%8Csql%E7%94%9F%E6%88%90/" target="_self">
-        <div>
-          表字符集修改 123456789101112SELECT    CONCAT(        &#x27;ALTER TABLE &#x27;,        TABLE_NAME,        &#x27; CONVERT TO CHARACTER SET utf8mb4;&#x27;    )FROM    information_schema. TABLESWHERE    TABLE
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-04-11 09:24" pubdate>
-              2024-04-11
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/%E6%A0%87%E7%AD%BE/mysql/">#mysql</a>
             
           </div>
         

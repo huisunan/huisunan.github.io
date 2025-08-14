@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Hexo</title>
+    <link>https://huisunan.github.io/</link>
+    
+    <atom:link href="https://huisunan.github.io/rss2.xml" rel="self" type="application/rss+xml"/>
+    
+    <description></description>
+    <pubDate>Thu, 14 Aug 2025 13:59:53 GMT</pubDate>
+    <generator>http://hexo.io/</generator>
+    
+    <item>
+      <title>解决SLF4J多提供者冲突：让TLogLogbackSLF4JServiceProvider生效的几种方式</title>
+      <link>https://huisunan.github.io/2025/08/14/%E8%A7%A3%E5%86%B3-SLF4J-%E5%A4%9A%E6%8F%90%E4%BE%9B%E8%80%85%E5%86%B2%E7%AA%81%EF%BC%9A%E8%AE%A9-TLogLogbackSLF4JServiceProvider-%E7%94%9F%E6%95%88%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/</link>
+      <guid>https://huisunan.github.io/2025/08/14/%E8%A7%A3%E5%86%B3-SLF4J-%E5%A4%9A%E6%8F%90%E4%BE%9B%E8%80%85%E5%86%B2%E7%AA%81%EF%BC%9A%E8%AE%A9-TLogLogbackSLF4JServiceProvider-%E7%94%9F%E6%95%88%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/</guid>
+      <pubDate>Thu, 14 Aug 2025 02:00:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;p&gt;在使用TLog分布式日志追踪框架时，你可能会遇到一个棘手的问题：其他应用能正常输出&lt;code&gt;%-17X&amp;#123;tl&amp;#125;&lt;/code&gt;追踪标识，唯独某个应用无法输出。排查后发现SLF4J日志中存在”多个提供者”的警告，这往往是问题的核心。本文将归纳解决这一问题的</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<p>在使用TLog分布式日志追踪框架时，你可能会遇到一个棘手的问题：其他应用能正常输出<code>%-17X&#123;tl&#125;</code>追踪标识，唯独某个应用无法输出。排查后发现SLF4J日志中存在”多个提供者”的警告，这往往是问题的核心。本文将归纳解决这一问题的具体方案，重点说明如何让TLog的<code>TLogLogbackSLF4JServiceProvider</code>成为SLF4J的实际提供者。</p><h3 id="一、问题根源：SLF4J提供者冲突"><a href="#一、问题根源：SLF4J提供者冲突" class="headerlink" title="一、问题根源：SLF4J提供者冲突"></a>一、问题根源：SLF4J提供者冲突</h3><p>SLF4J通过<strong>SPI机制</strong>（即<code>META-INF/services/org.slf4j.spi.SLF4JServiceProvider</code>配置文件）发现并选择日志服务提供者。当类路径中存在多个提供者时，SLF4J会优先加载”最早被发现”的那个，常见冲突场景如下：</p><ul><li><strong>原生Logback提供者</strong>：<code>ch.qos.logback.classic.spi.LogbackServiceProvider</code>（来自<code>logback-classic</code>依赖）</li><li><strong>TLog增强提供者</strong>：<code>org.slf4j.TLogLogbackSLF4JServiceProvider</code>（来自TLog核心依赖，用于处理<code>tl</code>追踪标识）</li></ul><p>当SLF4J实际绑定的是原生Logback提供者时，TLog的日志增强逻辑无法生效，导致<code>%-17X&#123;tl&#125;</code>无法解析MDC中的<code>tl</code>值。</p><h3 id="二、解决方式：让TLog提供者生效"><a href="#二、解决方式：让TLog提供者生效" class="headerlink" title="二、解决方式：让TLog提供者生效"></a>二、解决方式：让TLog提供者生效</h3><h4 id="1-调整依赖加载顺序（最简单直接）"><a href="#1-调整依赖加载顺序（最简单直接）" class="headerlink" title="1. 调整依赖加载顺序（最简单直接）"></a>1. 调整依赖加载顺序（最简单直接）</h4><p>SLF4J会按<strong>类路径中JAR包的加载顺序</strong>选择第一个发现的提供者。因此，只需让TLog依赖先于<code>logback-classic</code>被加载即可。</p><p><strong>Maven配置示例</strong>：</p><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-comment">&lt;!-- 1. 先声明TLog依赖 --&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.yomahub<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>tlog-core<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>你的TLog版本<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <br>    <span class="hljs-comment">&lt;!-- 2. 后声明logback-classic --&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>ch.qos.logback<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>logback-classic<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>你的Logback版本<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure><p><strong>部署包调整</strong>（适用于已打包应用）：</p><ul><li>解压应用JAR&#x2F;WAR包，将TLog相关JAR（如<code>tlog-core-x.x.x.jar</code>）移至<code>lib</code>目录最前面</li><li>重新打包并启动，容器会优先加载靠前的JAR，使TLog提供者被先发现</li></ul><h4 id="2-显式指定SLF4J提供者（优先级最高）"><a href="#2-显式指定SLF4J提供者（优先级最高）" class="headerlink" title="2. 显式指定SLF4J提供者（优先级最高）"></a>2. 显式指定SLF4J提供者（优先级最高）</h4><p>SLF4J支持通过<strong>系统属性<code>slf4j.provider</code></strong> 强制指定使用的提供者，无需修改依赖，适合开发和生产环境。</p><p><strong>使用方式</strong>：<br>在应用启动时添加JVM参数：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 开发环境（IDE配置）：在VM options中添加</span><br>-Dslf4j.provider=org.slf4j.TLogLogbackSLF4JServiceProvider<br><br><span class="hljs-comment"># 生产环境（启动脚本）：在JAVA_OPTS中添加</span><br>JAVA_OPTS=<span class="hljs-string">&quot;<span class="hljs-variable">$JAVA_OPTS</span> -Dslf4j.provider=org.slf4j.TLogLogbackSLF4JServiceProvider&quot;</span><br></code></pre></td></tr></table></figure><p><strong>注意</strong>：确保<code>org.slf4j.TLogLogbackSLF4JServiceProvider</code>类在类路径中存在（即TLog依赖已正确引入）。</p><h4 id="3-排除冲突的提供者配置文件（彻底去冲突）"><a href="#3-排除冲突的提供者配置文件（彻底去冲突）" class="headerlink" title="3. 排除冲突的提供者配置文件（彻底去冲突）"></a>3. 排除冲突的提供者配置文件（彻底去冲突）</h4><p>若<code>logback-classic</code>的SPI配置文件干扰了TLog提供者，可通过构建工具排除该文件。</p><p><strong>Maven配置（使用shade插件）</strong>：</p><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">plugin</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>maven-shade-plugin<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>3.3.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">executions</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">execution</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">phase</span>&gt;</span>package<span class="hljs-tag">&lt;/<span class="hljs-name">phase</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">goals</span>&gt;</span><span class="hljs-tag">&lt;<span class="hljs-name">goal</span>&gt;</span>shade<span class="hljs-tag">&lt;/<span class="hljs-name">goal</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">goals</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">configuration</span>&gt;</span><br>                <span class="hljs-tag">&lt;<span class="hljs-name">filters</span>&gt;</span><br>                    <span class="hljs-tag">&lt;<span class="hljs-name">filter</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">artifact</span>&gt;</span>ch.qos.logback:logback-classic<span class="hljs-tag">&lt;/<span class="hljs-name">artifact</span>&gt;</span><br>                        <span class="hljs-tag">&lt;<span class="hljs-name">excludes</span>&gt;</span><br>                            <span class="hljs-comment">&lt;!-- 排除Logback原生的SLF4J提供者配置 --&gt;</span><br>                            <span class="hljs-tag">&lt;<span class="hljs-name">exclude</span>&gt;</span>META-INF/services/org.slf4j.spi.SLF4JServiceProvider<span class="hljs-tag">&lt;/<span class="hljs-name">exclude</span>&gt;</span><br>                        <span class="hljs-tag">&lt;/<span class="hljs-name">excludes</span>&gt;</span><br>                    <span class="hljs-tag">&lt;/<span class="hljs-name">filter</span>&gt;</span><br>                <span class="hljs-tag">&lt;/<span class="hljs-name">filters</span>&gt;</span><br>            <span class="hljs-tag">&lt;/<span class="hljs-name">configuration</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">execution</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">executions</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">plugin</span>&gt;</span><br></code></pre></td></tr></table></figure><h4 id="4-使用TLog专属集成依赖（推荐）"><a href="#4-使用TLog专属集成依赖（推荐）" class="headerlink" title="4. 使用TLog专属集成依赖（推荐）"></a>4. 使用TLog专属集成依赖（推荐）</h4><p>TLog提供了针对Logback的集成包（如<code>tlog-logback</code>），已内置适配的SLF4J提供者配置，可直接替换原生依赖：</p><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-comment">&lt;!-- 移除原生logback-classic --&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>ch.qos.logback<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>logback-classic<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>provided<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span> <span class="hljs-comment">&lt;!-- 仅保留编译时依赖 --&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 引入TLog-Logback集成包 --&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.yomahub<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>tlog-logback<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>你的TLog版本<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure><h3 id="三、验证是否生效"><a href="#三、验证是否生效" class="headerlink" title="三、验证是否生效"></a>三、验证是否生效</h3><p>重启应用后，查看SLF4J初始化日志，若出现以下内容，说明TLog提供者已生效：</p><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">SLF4J</span><span class="hljs-params">(I)</span></span>: Actual provider is of type <span class="hljs-selector-attr">[org.slf4j.TLogLogbackSLF4JServiceProvider@xxx]</span><br></code></pre></td></tr></table></figure><p>此时再观察日志输出，<code>%-17X&#123;tl&#125;</code>应能正常打印TLog的追踪标识。</p><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>解决<code>%-17X&#123;tl&#125;</code>无法输出的核心是让TLog的<code>TLogLogbackSLF4JServiceProvider</code>成为SLF4J的实际提供者。推荐优先使用<strong>调整依赖顺序</strong>或<strong>添加JVM参数</strong>的方式，简单且不易出错。若存在复杂依赖冲突，可结合排除配置文件或使用TLog专属集成包彻底解决。</p>]]></content:encoded>
+      
+      
+      <category domain="https://huisunan.github.io/categories/%E6%8A%80%E6%9C%AF%E6%8E%92%E6%9F%A5/">技术排查</category>
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/Java/">Java</category>
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/%E6%97%A5%E5%BF%97%E6%A1%86%E6%9E%B6/">日志框架</category>
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/SLF4J/">SLF4J</category>
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/TLog/">TLog</category>
+      
+      
+      <comments>https://huisunan.github.io/2025/08/14/%E8%A7%A3%E5%86%B3-SLF4J-%E5%A4%9A%E6%8F%90%E4%BE%9B%E8%80%85%E5%86%B2%E7%AA%81%EF%BC%9A%E8%AE%A9-TLogLogbackSLF4JServiceProvider-%E7%94%9F%E6%95%88%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>containerd推送镜像</title>
+      <link>https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/</link>
+      <guid>https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/</guid>
+      <pubDate>Tue, 05 Aug 2025 16:04:10 GMT</pubDate>
+      
+        
+        
+      <description>&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><br>ctr images push xxx.com.cn/xxx/dddd:2.11.37 --skip-verify=true --user admin:admin --plain-http<br><br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/containerd/">containerd</category>
+      
+      
+      <comments>https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>自建openVpn 双向通信</title>
+      <link>https://huisunan.github.io/2025/06/28/%E8%87%AA%E5%BB%BAopenVpn-%E5%8F%8C%E5%90%91%E9%80%9A%E4%BF%A1/</link>
+      <guid>https://huisunan.github.io/2025/06/28/%E8%87%AA%E5%BB%BAopenVpn-%E5%8F%8C%E5%90%91%E9%80%9A%E4%BF%A1/</guid>
+      <pubDate>Sat, 28 Jun 2025 14:58:40 GMT</pubDate>
+      
+        
+        
+      <description>&lt;p&gt;已经搭建好openvpn as服务器,此文章主要解决双向通信的问题&lt;/p&gt;
+&lt;p&gt;openvpn as 如果是docker部署的，推荐network_mode修改为host&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;公司网段: 10.88.0.0&amp;#x2F;19&lt;/p&gt;
+&lt;p</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<p>已经搭建好openvpn as服务器,此文章主要解决双向通信的问题</p><p>openvpn as 如果是docker部署的，推荐network_mode修改为host</p><blockquote><p>公司网段: 10.88.0.0&#x2F;19</p><p>vpn网段: 10.88.32.0&#x2F;20</p><p>openvpn ip: 10.88.1.4</p></blockquote><p>目前 vpn网段已经支持</p><h2 id="添加vpn客户端访问公司网段的权限"><a href="#添加vpn客户端访问公司网段的权限" class="headerlink" title="添加vpn客户端访问公司网段的权限"></a>添加vpn客户端访问公司网段的权限</h2><p><img src="/../images/vpn-setting.png"></p><h2 id="添加公司网段内机器访问openvpn客户端机器"><a href="#添加公司网段内机器访问openvpn客户端机器" class="headerlink" title="添加公司网段内机器访问openvpn客户端机器"></a>添加公司网段内机器访问openvpn客户端机器</h2><p>在路由器上添加路由表</p><p>10.88.32.0&#x2F;20 —&gt;  10.88.1.4</p><p>openvpn所在机器开启 </p><p>服务器上开启转发</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">echo &#x27;net.ipv4.ip_forward = 1&#x27; &gt;&gt; /etc/sysctl.conf<br>sysctl -p<br></code></pre></td></tr></table></figure><p>查看一下路由表</p><p><img src="/../images/vpn-setting-2.png"></p><p>在AS0_OUT_S2C 前添加一个转发策略</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">iptables -I FORWARD 3 -d 10.88.32.0/20 -j ACCEPT<br></code></pre></td></tr></table></figure><h2 id="为什么在AS0-OUT-S2C前添加转发策略"><a href="#为什么在AS0-OUT-S2C前添加转发策略" class="headerlink" title="为什么在AS0_OUT_S2C前添加转发策略"></a>为什么在AS0_OUT_S2C前添加转发策略</h2><p><img src="/../images/vpn-setting-3.png" alt="img.png"></p><p>追踪一下链路会发现，请求中没有标识的会被直接drop掉，导致转发失败</p>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/openvpn/">openvpn</category>
+      
+      
+      <comments>https://huisunan.github.io/2025/06/28/%E8%87%AA%E5%BB%BAopenVpn-%E5%8F%8C%E5%90%91%E9%80%9A%E4%BF%A1/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>pt-online-schema-change使用</title>
+      <link>https://huisunan.github.io/2025/05/21/pt-online-schema-change%E4%BD%BF%E7%94%A8/</link>
+      <guid>https://huisunan.github.io/2025/05/21/pt-online-schema-change%E4%BD%BF%E7%94%A8/</guid>
+      <pubDate>Wed, 21 May 2025 02:13:13 GMT</pubDate>
+      
+        
+        
+      <description>&lt;p&gt;不查询副本&lt;/p&gt;
+&lt;p&gt;–recursion-method&amp;#x3D;NONE &lt;/p&gt;
+</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<p>不查询副本</p><p>–recursion-method&#x3D;NONE </p>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/mysql/">mysql</category>
+      
+      
+      <comments>https://huisunan.github.io/2025/05/21/pt-online-schema-change%E4%BD%BF%E7%94%A8/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>Jackson JsonAnyGetter 字段和引用类冲突解</title>
+      <link>https://huisunan.github.io/2025/04/30/%E5%AD%97%E6%AE%B5%E5%92%8C%E5%BC%95%E7%94%A8%E7%B1%BB%E5%86%B2%E7%AA%81%E8%A7%A3%E5%86%B3/</link>
+      <guid>https://huisunan.github.io/2025/04/30/%E5%AD%97%E6%AE%B5%E5%92%8C%E5%BC%95%E7%94%A8%E7%B1%BB%E5%86%B2%E7%AA%81%E8%A7%A3%E5%86%B3/</guid>
+      <pubDate>Wed, 30 Apr 2025 13:06:09 GMT</pubDate>
+      
+        
+        
+      <description>&lt;h2 id=&quot;方法一-重写AnyWriter&quot;&gt;&lt;a href=&quot;#方法一-重写AnyWriter&quot; class=&quot;headerlink&quot; title=&quot;方法一 重写AnyWriter&quot;&gt;&lt;/a&gt;方法一 重写AnyWriter&lt;/h2&gt;&lt;figure class=&quot;highli</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<h2 id="方法一-重写AnyWriter"><a href="#方法一-重写AnyWriter" class="headerlink" title="方法一 重写AnyWriter"></a>方法一 重写AnyWriter</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">import</span> cn.hutool.core.util.ReflectUtil;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.core.JsonGenerator;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.BeanProperty;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.JsonSerializer;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.SerializerProvider;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.introspect.AnnotatedMember;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.ser.AnyGetterWriter;<br><br><span class="hljs-keyword">import</span> java.lang.reflect.Field;<br><span class="hljs-keyword">import</span> java.util.Arrays;<br><span class="hljs-keyword">import</span> java.util.Map;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CustomAnyGetterWriter</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">AnyGetterWriter</span> &#123;<br><span class="hljs-keyword">public</span> <span class="hljs-title function_">CustomAnyGetterWriter</span><span class="hljs-params">(BeanProperty property, AnnotatedMember accessor, JsonSerializer&lt;?&gt; serializer)</span> &#123;<br><span class="hljs-built_in">super</span>(property, accessor, serializer);<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">getAndSerialize</span><span class="hljs-params">(Object bean, JsonGenerator gen, SerializerProvider provider)</span><br><span class="hljs-keyword">throws</span> Exception &#123;<br><span class="hljs-type">Object</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> _accessor.getValue(bean);<br><span class="hljs-keyword">if</span> (value == <span class="hljs-literal">null</span>) &#123;<br><span class="hljs-keyword">return</span>;<br>&#125;<br><span class="hljs-keyword">if</span> (!(value <span class="hljs-keyword">instanceof</span> Map&lt;?, ?&gt;)) &#123;<br>provider.reportBadDefinition(_property.getType(), String.format(<br><span class="hljs-string">&quot;Value returned by &#x27;any-getter&#x27; %s() not java.util.Map but %s&quot;</span>,<br>_accessor.getName(), value.getClass().getName()));<br>&#125;<br><br><span class="hljs-comment">// 23-Feb-2015, tatu: Nasty, but has to do (for now)</span><br><span class="hljs-keyword">if</span> (_mapSerializer != <span class="hljs-literal">null</span>) &#123;<br>Map&lt;?, ?&gt; mapValue = (Map&lt;?, ?&gt;) value;<br><br><br>Arrays.stream(ReflectUtil.getFields(_accessor.getDeclaringClass()))<br>.map(Field::getName)<br>.filter(name -&gt; !name.equals(_property.getName()))<br>.forEach(mapValue::remove);<br>_mapSerializer.serializeWithoutTypeInfo(mapValue, gen, provider);<br><span class="hljs-keyword">return</span>;<br>&#125;<br>_serializer.serialize(value, gen, provider);<br>&#125;<br><br><br>&#125;<br> <br></code></pre></td></tr></table></figure><p>使用自定义BeanSerializerModifier来处理</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">import</span> cn.hutool.core.util.ReflectUtil;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.BeanDescription;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.BeanProperty;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.JsonSerializer;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.SerializationConfig;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.introspect.AnnotatedMember;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.ser.BeanSerializerBuilder;<br><span class="hljs-keyword">import</span> com.fasterxml.jackson.databind.ser.BeanSerializerModifier;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DuplicateFieldSerializerModifier</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">BeanSerializerModifier</span> &#123;<br><br><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> BeanSerializerBuilder <span class="hljs-title function_">updateBuilder</span><span class="hljs-params">(SerializationConfig config, BeanDescription beanDesc, BeanSerializerBuilder builder)</span> &#123;<br><span class="hljs-type">BeanProperty</span> <span class="hljs-variable">property</span> <span class="hljs-operator">=</span> (BeanProperty) ReflectUtil.getFieldValue(builder.getAnyGetter(), <span class="hljs-string">&quot;_property&quot;</span>);<br><span class="hljs-type">AnnotatedMember</span> <span class="hljs-variable">accessor</span> <span class="hljs-operator">=</span> (AnnotatedMember) ReflectUtil.getFieldValue(builder.getAnyGetter(), <span class="hljs-string">&quot;_accessor&quot;</span>);<br>JsonSerializer&lt;Object&gt; serializer = (JsonSerializer&lt;Object&gt;) ReflectUtil.getFieldValue(builder.getAnyGetter(), <span class="hljs-string">&quot;_serializer&quot;</span>);<br>builder.setAnyGetter(<span class="hljs-keyword">new</span> <span class="hljs-title class_">CustomAnyGetterWriter</span>(property, accessor, serializer));<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">super</span>.updateBuilder(config, beanDesc, builder);<br>&#125;<br>&#125;<br><br><br></code></pre></td></tr></table></figure><p>进行注册</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">ObjectMapper</span> <span class="hljs-variable">objectMapper</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectMapper</span>();<br><br>objectMapper.registerModule(<span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleModule</span>()&#123;<br>        <span class="hljs-meta">@Override</span><br>        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setupModule</span><span class="hljs-params">(SetupContext context)</span> &#123;<br>            context.addBeanSerializerModifier(<span class="hljs-keyword">new</span> <span class="hljs-title class_">DuplicateFieldSerializerModifier</span>());<br>        &#125;<br>    &#125;);<br><br></code></pre></td></tr></table></figure><h2 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h2>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2025/04/30/%E5%AD%97%E6%AE%B5%E5%92%8C%E5%BC%95%E7%94%A8%E7%B1%BB%E5%86%B2%E7%AA%81%E8%A7%A3%E5%86%B3/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>Java屏蔽序列化版本不一致异常</title>
+      <link>https://huisunan.github.io/2025/04/28/Java%E5%B1%8F%E8%94%BD%E5%BA%8F%E5%88%97%E5%8C%96%E7%89%88%E6%9C%AC%E4%B8%8D%E4%B8%80%E8%87%B4%E5%BC%82%E5%B8%B8/</link>
+      <guid>https://huisunan.github.io/2025/04/28/Java%E5%B1%8F%E8%94%BD%E5%BA%8F%E5%88%97%E5%8C%96%E7%89%88%E6%9C%AC%E4%B8%8D%E4%B8%80%E8%87%B4%E5%BC%82%E5%B8%B8/</guid>
+      <pubDate>Mon, 28 Apr 2025 11:02:45 GMT</pubDate>
+      
+        
+        
+      <description>&lt;p&gt;经常会碰到实现了序列化接口，但是忘记添加序列化id，导致线上的数据无法被正常的反序列化&lt;/p&gt;
+&lt;p&gt;使用CompatibleInputStream代替ObjectInputStream&lt;/p&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<p>经常会碰到实现了序列化接口，但是忘记添加序列化id，导致线上的数据无法被正常的反序列化</p><p>使用CompatibleInputStream代替ObjectInputStream</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 处理 jdk 序列化反序列化时，uid不一样的情况</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">@Slf4j</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CompatibleInputStream</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">ObjectInputStream</span> &#123;<br><span class="hljs-keyword">public</span> <span class="hljs-title function_">CompatibleInputStream</span><span class="hljs-params">(InputStream in)</span> <span class="hljs-keyword">throws</span> IOException &#123;<br><span class="hljs-built_in">super</span>(in);<br>&#125;<br><br><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">protected</span> ObjectStreamClass <span class="hljs-title function_">readClassDescriptor</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException, ClassNotFoundException &#123;<br><span class="hljs-type">ObjectStreamClass</span> <span class="hljs-variable">resultClassDescriptor</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">super</span>.readClassDescriptor(); <span class="hljs-comment">// initially streams descriptor</span><br>Class localClass; <span class="hljs-comment">// the class in the local JVM that this descriptor represents.</span><br><span class="hljs-keyword">try</span> &#123;<br>localClass = Class.forName(resultClassDescriptor.getName());<br>&#125; <span class="hljs-keyword">catch</span> (ClassNotFoundException e) &#123;<br><span class="hljs-keyword">return</span> resultClassDescriptor;<br>&#125;<br><span class="hljs-type">ObjectStreamClass</span> <span class="hljs-variable">localClassDescriptor</span> <span class="hljs-operator">=</span> ObjectStreamClass.lookup(localClass);<br><span class="hljs-keyword">if</span> (localClassDescriptor != <span class="hljs-literal">null</span>) &#123; <span class="hljs-comment">// only if class implements serializable</span><br><span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">localSUID</span> <span class="hljs-operator">=</span> localClassDescriptor.getSerialVersionUID();<br><span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">streamSUID</span> <span class="hljs-operator">=</span> resultClassDescriptor.getSerialVersionUID();<br><span class="hljs-keyword">if</span> (streamSUID != localSUID) &#123; <span class="hljs-comment">// check for serialVersionUID mismatch.</span><br>log.warn(<span class="hljs-string">&quot;Overriding serialized class version mismatch: local serialVersionUID = [&#123;&#125;] stream serialVersionUID = [&#123;&#125;]&quot;</span>, localSUID, streamSUID);<br>resultClassDescriptor = localClassDescriptor; <span class="hljs-comment">// Use local class descriptor for deserialization</span><br>&#125;<br>&#125;<br><span class="hljs-keyword">return</span> resultClassDescriptor;<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2025/04/28/Java%E5%B1%8F%E8%94%BD%E5%BA%8F%E5%88%97%E5%8C%96%E7%89%88%E6%9C%AC%E4%B8%8D%E4%B8%80%E8%87%B4%E5%BC%82%E5%B8%B8/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>Spring Cloud nacos的服务下线后，没有从负载均衡中剔除</title>
+      <link>https://huisunan.github.io/2025/04/28/Spring-Cloud-nacos%E7%9A%84%E6%9C%8D%E5%8A%A1%E4%B8%8B%E7%BA%BF%E5%90%8E%EF%BC%8C%E6%B2%A1%E6%9C%89%E4%BB%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%AD%E5%89%94%E9%99%A4/</link>
+      <guid>https://huisunan.github.io/2025/04/28/Spring-Cloud-nacos%E7%9A%84%E6%9C%8D%E5%8A%A1%E4%B8%8B%E7%BA%BF%E5%90%8E%EF%BC%8C%E6%B2%A1%E6%9C%89%E4%BB%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%AD%E5%89%94%E9%99%A4/</guid>
+      <pubDate>Mon, 28 Apr 2025 10:56:01 GMT</pubDate>
+      
+        
+        
+      <description>&lt;p&gt;通过debug发现，Spring Cloud的负载均衡对服务进行了缓存，导致nacos的服务从nacos中下线，没有及时剔除&lt;/p&gt;
+&lt;p&gt;org.springframework.cloud.loadbalancer.core.CachingServiceInstanceL</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<p>通过debug发现，Spring Cloud的负载均衡对服务进行了缓存，导致nacos的服务从nacos中下线，没有及时剔除</p><p>org.springframework.cloud.loadbalancer.core.CachingServiceInstanceListSupplier</p><p>解决方法</p><p>关闭该缓存，nacos自身是有缓存的</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="comment"># 禁用loadbalancer缓存,实现优雅下线</span></span><br><span class="line">    <span class="attr">loadbalancer:</span></span><br><span class="line">      <span class="attr">cache:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2025/04/28/Spring-Cloud-nacos%E7%9A%84%E6%9C%8D%E5%8A%A1%E4%B8%8B%E7%BA%BF%E5%90%8E%EF%BC%8C%E6%B2%A1%E6%9C%89%E4%BB%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%AD%E5%89%94%E9%99%A4/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>使用Futuer控制任务执行时间</title>
+      <link>https://huisunan.github.io/2025/02/20/%E4%BD%BF%E7%94%A8Futuer%E6%8E%A7%E5%88%B6%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%97%B6%E9%97%B4/</link>
+      <guid>https://huisunan.github.io/2025/02/20/%E4%BD%BF%E7%94%A8Futuer%E6%8E%A7%E5%88%B6%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%97%B6%E9%97%B4/</guid>
+      <pubDate>Thu, 20 Feb 2025 08:55:16 GMT</pubDate>
+      
+        
+        
+      <description>&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ThreadTest</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        <span class="hljs-type">ExecutorService</span> <span class="hljs-variable">executorService</span> <span class="hljs-operator">=</span> Executors.newSingleThreadExecutor();<br><br>        Future&lt;Boolean&gt; future = executorService.submit(() -&gt; &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                TimeUnit.MINUTES.sleep(<span class="hljs-number">1</span>);<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                System.out.println(<span class="hljs-string">&quot;Interrupted&quot;</span>);<br>                e.printStackTrace();<br>            &#125;<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>        &#125;);<br><br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-type">Boolean</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> future.get(<span class="hljs-number">10</span>, TimeUnit.SECONDS);<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            e.printStackTrace();<br>            System.out.println(<span class="hljs-string">&quot;timeout&quot;</span>);<br>            future.cancel(<span class="hljs-literal">true</span>);<br><br>        &#125;<br><br>        TimeUnit.HOURS.sleep(<span class="hljs-number">1</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure><p>输出日志</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs shell">java.util.concurrent.TimeoutException<br>at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:204)<br>at io.github.hsn.bugtest.ThreadTest.main(ThreadTest.java:23)<br>java.lang.InterruptedException: sleep interrupted<br>at java.base/java.lang.Thread.sleep(Native Method)<br>at java.base/java.lang.Thread.sleep(Thread.java:344)<br>at java.base/java.util.concurrent.TimeUnit.sleep(TimeUnit.java:446)<br>at io.github.hsn.bugtest.ThreadTest.lambda$main$0(ThreadTest.java:14)<br>at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)<br>at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)<br>at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)<br>at java.base/java.lang.Thread.run(Thread.java:840)<br>timeout<br>Interrupted<br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      
+      <comments>https://huisunan.github.io/2025/02/20/%E4%BD%BF%E7%94%A8Futuer%E6%8E%A7%E5%88%B6%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%97%B6%E9%97%B4/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>k8s批量调整副本数量</title>
+      <link>https://huisunan.github.io/2024/08/22/k8s%E6%89%B9%E9%87%8F%E8%B0%83%E6%95%B4%E5%89%AF%E6%9C%AC%E6%95%B0%E9%87%8F/</link>
+      <guid>https://huisunan.github.io/2024/08/22/k8s%E6%89%B9%E9%87%8F%E8%B0%83%E6%95%B4%E5%89%AF%E6%9C%AC%E6%95%B0%E9%87%8F/</guid>
+      <pubDate>Thu, 22 Aug 2024 05:33:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;deploy&lt;/p&gt;
+&lt;figure class=&quot;highlight routeros&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>deploy</p><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">kubectl <span class="hljs-built_in">get</span> deploy -n default|tail -q -n 100|awk <span class="hljs-string">&#x27;&#123;print $1&#125;&#x27;</span>|xargs -I ARG kubectl scale deploy ARG -n<span class="hljs-built_in"> default </span><span class="hljs-attribute">--replicas</span>=0<br><br></code></pre></td></tr></table></figure><p>statefulset</p><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">kubectl <span class="hljs-built_in">get</span> statefulset -n default|tail -q -n 100|awk <span class="hljs-string">&#x27;&#123;print $1&#125;&#x27;</span>|xargs -I ARG kubectl scale statefulset ARG -n<span class="hljs-built_in"> default </span><span class="hljs-attribute">--replicas</span>=0<br><br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/ops/">ops</category>
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/k8s/">k8s</category>
+      
+      
+      <comments>https://huisunan.github.io/2024/08/22/k8s%E6%89%B9%E9%87%8F%E8%B0%83%E6%95%B4%E5%89%AF%E6%9C%AC%E6%95%B0%E9%87%8F/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>jira修改RoadMap里的时间格式，硬核日期格式化</title>
+      <link>https://huisunan.github.io/2024/07/04/jira%E4%BF%AE%E6%94%B9RoadMap%E9%87%8C%E7%9A%84%E6%97%B6%E9%97%B4%E6%A0%BC%E5%BC%8F%EF%BC%8C%E7%A1%AC%E6%A0%B8%E6%97%A5%E6%9C%9F%E6%A0%BC%E5%BC%8F%E5%8C%96/</link>
+      <guid>https://huisunan.github.io/2024/07/04/jira%E4%BF%AE%E6%94%B9RoadMap%E9%87%8C%E7%9A%84%E6%97%B6%E9%97%B4%E6%A0%BC%E5%BC%8F%EF%BC%8C%E7%A1%AC%E6%A0%B8%E6%97%A5%E6%9C%9F%E6%A0%BC%E5%BC%8F%E5%8C%96/</guid>
+      <pubDate>Wed, 03 Jul 2024 18:39:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;h2 id=&quot;jira修改roadMap里的时间格式&quot;&gt;&lt;a href=&quot;#jira修改roadMap里的时间格式&quot; class=&quot;headerlink&quot; title=&quot;jira修改roadMap里的时间格式&quot;&gt;&lt;/a&gt;jira</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><h2 id="jira修改roadMap里的时间格式"><a href="#jira修改roadMap里的时间格式" class="headerlink" title="jira修改roadMap里的时间格式"></a>jira修改roadMap里的时间格式</h2><p>在插件目录找到portfolio-plugin-9.16.1.jar将他下载到本地</p><p>使用zip解压软件解压jar包</p><p>全局搜索 DD&#x2F;MM&#x2F;YY 将其替换YYYY&#x2F;MM&#x2F;DD</p><p><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240704021643685-138945748_1730686593219.png"></p><p>修改后效果图</p><p><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240704021902180-1363806614_1730686593219.png"><br><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240704021925960-489974832_1730686593219.png"></p><p>全局搜索</p><p>return<code>$&#123;l()(o.getUTCDate().toString(),2,&quot;0&quot;)&#125;/$&#123;t&#125;</code></p><p>替换</p><p>return <code>$&#123;o.getUTCMonth()+1&#125;/$&#123;l()(o.getUTCDate().toString(), 2, &quot;0&quot;)&#125;</code></p><p>效果图</p><p><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240704022125055-91458395_1730686593219.png"></p><p>全局搜索</p><p>return<code>$&#123;t&#125; $&#123;l()(&quot;&quot;+o.getUTCDate(),2,&quot;0&quot;)&#125;/$&#123;a&#125;</code></p><p>替换</p><p>return <code>$&#123;o.getUTCMonth()&#125;/$&#123;l()(&quot;&quot; + o.getUTCDate(), 2, &quot;0&quot;)&#125; 星期$&#123;[&#39;日&#39;,&#39;一&#39;,&#39;二&#39;,&#39;三&#39;,&#39;四&#39;,&#39;五&#39;,&#39;六&#39;][o.getUTCDay()]&#125;</code></p><p>效果<br><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240704024640829-57160194_1730686593219.png"></p><p>全部替换完成后，将文件压缩成zip包，将后缀修改成jar，并上传到插件目录下替换</p><p>这里是已经替换好的文件包</p>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/other/">other</category>
+      
+      
+      <comments>https://huisunan.github.io/2024/07/04/jira%E4%BF%AE%E6%94%B9RoadMap%E9%87%8C%E7%9A%84%E6%97%B6%E9%97%B4%E6%A0%BC%E5%BC%8F%EF%BC%8C%E7%A1%AC%E6%A0%B8%E6%97%A5%E6%9C%9F%E6%A0%BC%E5%BC%8F%E5%8C%96/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>批量修改字段字符集和表表字符集，sql生成</title>
+      <link>https://huisunan.github.io/2024/04/11/%E6%89%B9%E9%87%8F%E4%BF%AE%E6%94%B9%E5%AD%97%E6%AE%B5%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E8%A1%A8%E8%A1%A8%E5%AD%97%E7%AC%A6%E9%9B%86%EF%BC%8Csql%E7%94%9F%E6%88%90/</link>
+      <guid>https://huisunan.github.io/2024/04/11/%E6%89%B9%E9%87%8F%E4%BF%AE%E6%94%B9%E5%AD%97%E6%AE%B5%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E8%A1%A8%E8%A1%A8%E5%AD%97%E7%AC%A6%E9%9B%86%EF%BC%8Csql%E7%94%9F%E6%88%90/</guid>
+      <pubDate>Thu, 11 Apr 2024 01:24:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;表字符集修改&lt;/p&gt;
+&lt;figure class=&quot;highlight sql&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>表字符集修改</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    CONCAT(</span><br><span class="line">        <span class="string">&#x27;ALTER TABLE &#x27;</span>,</span><br><span class="line">        TABLE_NAME,</span><br><span class="line">        <span class="string">&#x27; CONVERT TO CHARACTER SET utf8mb4;&#x27;</span></span><br><span class="line">    )</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">    information_schema. TABLES</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">    TABLE_SCHEMA <span class="operator">=</span> <span class="string">&#x27;dataBaseName&#x27;</span>;</span><br><span class="line"></span><br></pre></td></tr></table></figure><p>表字段字符集修改</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    CONCAT(</span><br><span class="line">        <span class="string">&#x27;ALTER TABLE `&#x27;</span>,</span><br><span class="line">        TABLE_NAME,</span><br><span class="line">        <span class="string">&#x27;` MODIFY `&#x27;</span>,</span><br><span class="line">        COLUMN_NAME,</span><br><span class="line">        <span class="string">&#x27;` &#x27;</span>,</span><br><span class="line">        DATA_TYPE,</span><br><span class="line">        <span class="string">&#x27;(&#x27;</span>,</span><br><span class="line">        CHARACTER_MAXIMUM_LENGTH,</span><br><span class="line">        <span class="string">&#x27;)&#x27;</span>,</span><br><span class="line"></span><br><span class="line">        <span class="string">&#x27; CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci&#x27;</span>,</span><br><span class="line">         if(COLUMN_DEFAULT <span class="keyword">is</span> <span class="keyword">null</span> ,<span class="string">&#x27;&#x27;</span>,concat(<span class="string">&#x27; default \&#x27;&#x27;,COLUMN_DEFAULT,&#x27;</span>\<span class="string">&#x27;&#x27;</span>)),</span><br><span class="line">        (</span><br><span class="line">            <span class="keyword">CASE</span></span><br><span class="line">            <span class="keyword">WHEN</span> IS_NULLABLE <span class="operator">=</span> <span class="string">&#x27;NO&#x27;</span> <span class="keyword">THEN</span></span><br><span class="line">                <span class="string">&#x27; NOT NULL&#x27;</span></span><br><span class="line">            <span class="keyword">ELSE</span></span><br><span class="line">                <span class="string">&#x27;&#x27;</span></span><br><span class="line">            <span class="keyword">END</span></span><br><span class="line">        ),</span><br><span class="line">        <span class="string">&#x27;;&#x27;</span></span><br><span class="line">    )</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">    information_schema.COLUMNS</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">    TABLE_SCHEMA <span class="operator">=</span> <span class="string">&#x27;table_name&#x27;</span></span><br><span class="line"><span class="keyword">AND</span> (DATA_TYPE <span class="operator">=</span> <span class="string">&#x27;varchar&#x27;</span> <span class="keyword">OR</span> DATA_TYPE <span class="operator">=</span> <span class="string">&#x27;char&#x27;</span>)</span><br><span class="line"><span class="keyword">and</span> TABLE_NAME <span class="keyword">not</span> <span class="keyword">in</span> (<span class="string">&#x27;flyway_schema_history&#x27;</span>,<span class="string">&#x27;undo_log&#x27;</span>);</span><br></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/mysql/">mysql</category>
+      
+      
+      <comments>https://huisunan.github.io/2024/04/11/%E6%89%B9%E9%87%8F%E4%BF%AE%E6%94%B9%E5%AD%97%E6%AE%B5%E5%AD%97%E7%AC%A6%E9%9B%86%E5%92%8C%E8%A1%A8%E8%A1%A8%E5%AD%97%E7%AC%A6%E9%9B%86%EF%BC%8Csql%E7%94%9F%E6%88%90/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>使用RSS+n8n同步博客园文章到cubox</title>
+      <link>https://huisunan.github.io/2024/02/07/%E4%BD%BF%E7%94%A8RSS+n8n%E5%90%8C%E6%AD%A5%E5%8D%9A%E5%AE%A2%E5%9B%AD%E6%96%87%E7%AB%A0%E5%88%B0cubox/</link>
+      <guid>https://huisunan.github.io/2024/02/07/%E4%BD%BF%E7%94%A8RSS+n8n%E5%90%8C%E6%AD%A5%E5%8D%9A%E5%AE%A2%E5%9B%AD%E6%96%87%E7%AB%A0%E5%88%B0cubox/</guid>
+      <pubDate>Wed, 07 Feb 2024 14:44:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;h1 id=&quot;使用RSS-n8n同步博客文章到Cubox&quot;&gt;&lt;a href=&quot;#使用RSS-n8n同步博客文章到Cubox&quot; class=&quot;headerlink&quot; title=&quot;使用RSS+n8n同步博客文章到Cubox&quot;&gt;&lt;/</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><h1 id="使用RSS-n8n同步博客文章到Cubox"><a href="#使用RSS-n8n同步博客文章到Cubox" class="headerlink" title="使用RSS+n8n同步博客文章到Cubox"></a>使用RSS+n8n同步博客文章到Cubox</h1><h2 id="Cubox"><a href="#Cubox" class="headerlink" title="Cubox"></a>Cubox</h2><p>Cubox是一款碎片知识文章收集的应用</p><p><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240207223738974-1361379525_1730686602019.png"></p><h2 id="n8n"><a href="#n8n" class="headerlink" title="n8n"></a>n8n</h2><p>低代码的workFlow</p><p><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240207223759173-1889192280_1730686602019.png"></p><h2 id="整合"><a href="#整合" class="headerlink" title="整合"></a>整合</h2><p><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240207224237831-1340391436_1730686602019.png"></p><p>大致流程</p><p>定时触发器-&gt;获取RSS列表-&gt;迭代-&gt;文章是否已经同步-&gt;同步文章到cubox-&gt;同步记录写到数据库-&gt;结束</p><blockquote><p>这是一个大概的流程，当然也可以实现同步到其他地方的流程</p></blockquote>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/other/">other</category>
+      
+      
+      <comments>https://huisunan.github.io/2024/02/07/%E4%BD%BF%E7%94%A8RSS+n8n%E5%90%8C%E6%AD%A5%E5%8D%9A%E5%AE%A2%E5%9B%AD%E6%96%87%E7%AB%A0%E5%88%B0cubox/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>使用spring cloud gateway 转发文件上传请求时，直接内存oom异常</title>
+      <link>https://huisunan.github.io/2024/01/03/%E4%BD%BF%E7%94%A8spring%20cloud%20gateway%20%E8%BD%AC%E5%8F%91%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E8%AF%B7%E6%B1%82%E6%97%B6%EF%BC%8C%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98oom%E5%BC%82%E5%B8%B8/</link>
+      <guid>https://huisunan.github.io/2024/01/03/%E4%BD%BF%E7%94%A8spring%20cloud%20gateway%20%E8%BD%AC%E5%8F%91%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E8%AF%B7%E6%B1%82%E6%97%B6%EF%BC%8C%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98oom%E5%BC%82%E5%B8%B8/</guid>
+      <pubDate>Wed, 03 Jan 2024 15:52:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;重写 AdaptCachedBodyGlobalFilter&lt;/p&gt;
+&lt;p&gt;直接在项目中建立一个包名和文件名一样的类,实现覆盖的效果，目前官方的类还不支持拓展&lt;br&gt;&lt;img src=&quot;https://raw.githubu</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>重写 AdaptCachedBodyGlobalFilter</p><p>直接在项目中建立一个包名和文件名一样的类,实现覆盖的效果，目前官方的类还不支持拓展<br><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20240103234938964-1542120015_1730686602019.png"></p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * Copyright 2013-2020 the original author or authors.</span><br><span class="line"> *</span><br><span class="line"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span><br><span class="line"> * you may not use this file except in compliance with the License.</span><br><span class="line"> * You may obtain a copy of the License at</span><br><span class="line"> *</span><br><span class="line"> *      https://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"> *</span><br><span class="line"> * Unless required by applicable law or agreed to in writing, software</span><br><span class="line"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"> * See the License for the specific language governing permissions and</span><br><span class="line"> * limitations under the License.</span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">package org.springframework.cloud.gateway.filter;</span><br><span class="line"></span><br><span class="line">import java.util.concurrent.ConcurrentHashMap;</span><br><span class="line">import java.util.concurrent.ConcurrentMap;</span><br><span class="line"></span><br><span class="line">import org.springframework.http.HttpHeaders;</span><br><span class="line">import org.springframework.http.MediaType;</span><br><span class="line">import reactor.core.publisher.Mono;</span><br><span class="line"></span><br><span class="line">import org.springframework.cloud.gateway.event.EnableBodyCachingEvent;</span><br><span class="line">import org.springframework.cloud.gateway.route.Route;</span><br><span class="line">import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;</span><br><span class="line">import org.springframework.context.ApplicationListener;</span><br><span class="line">import org.springframework.core.Ordered;</span><br><span class="line">import org.springframework.core.io.buffer.DataBuffer;</span><br><span class="line">import org.springframework.http.server.reactive.ServerHttpRequest;</span><br><span class="line">import org.springframework.web.server.ServerWebExchange;</span><br><span class="line"></span><br><span class="line">import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CACHED_REQUEST_BODY_ATTR;</span><br><span class="line">import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR;</span><br><span class="line">import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR;</span><br><span class="line"></span><br><span class="line">public class AdaptCachedBodyGlobalFilter implements GlobalFilter, Ordered, ApplicationListener&lt;EnableBodyCachingEvent&gt; &#123;</span><br><span class="line"></span><br><span class="line">private ConcurrentMap&lt;String, Boolean&gt; routesToCache = new ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public void onApplicationEvent(EnableBodyCachingEvent event) &#123;</span><br><span class="line">this.routesToCache.putIfAbsent(event.getRouteId(), true);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public Mono&lt;Void&gt; filter(ServerWebExchange exchange, GatewayFilterChain chain) &#123;</span><br><span class="line">//此处为重写代码-start</span><br><span class="line">String contentType = exchange.getRequest().getHeaders().getFirst(HttpHeaders.CONTENT_TYPE);</span><br><span class="line"></span><br><span class="line">if (contentType != null &amp;&amp; contentType.contains(MediaType.MULTIPART_FORM_DATA_VALUE)) &#123;</span><br><span class="line">return chain.filter(exchange);</span><br><span class="line">&#125;</span><br><span class="line">//此处为重写代码-end</span><br><span class="line">// the cached ServerHttpRequest is used when the ServerWebExchange can not be</span><br><span class="line">// mutated, for example, during a predicate where the body is read, but still</span><br><span class="line">// needs to be cached.</span><br><span class="line">ServerHttpRequest cachedRequest = exchange.getAttributeOrDefault(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR,</span><br><span class="line">null);</span><br><span class="line">if (cachedRequest != null) &#123;</span><br><span class="line">exchange.getAttributes().remove(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);</span><br><span class="line">return chain.filter(exchange.mutate().request(cachedRequest).build());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//</span><br><span class="line">DataBuffer body = exchange.getAttributeOrDefault(CACHED_REQUEST_BODY_ATTR, null);</span><br><span class="line">Route route = exchange.getAttribute(GATEWAY_ROUTE_ATTR);</span><br><span class="line"></span><br><span class="line">if (body != null || !this.routesToCache.containsKey(route.getId())) &#123;</span><br><span class="line">return chain.filter(exchange);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">return ServerWebExchangeUtils.cacheRequestBody(exchange, (serverHttpRequest) -&gt; &#123;</span><br><span class="line">// don&#x27;t mutate and build if same request object</span><br><span class="line">if (serverHttpRequest == exchange.getRequest()) &#123;</span><br><span class="line">return chain.filter(exchange);</span><br><span class="line">&#125;</span><br><span class="line">return chain.filter(exchange.mutate().request(serverHttpRequest).build());</span><br><span class="line">&#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public int getOrder() &#123;</span><br><span class="line">return Ordered.HIGHEST_PRECEDENCE + 1000;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2024/01/03/%E4%BD%BF%E7%94%A8spring%20cloud%20gateway%20%E8%BD%AC%E5%8F%91%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E8%AF%B7%E6%B1%82%E6%97%B6%EF%BC%8C%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98oom%E5%BC%82%E5%B8%B8/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>spring boot 开启gzip 加快报文传输速度</title>
+      <link>https://huisunan.github.io/2023/12/30/spring%20boot%20%E5%BC%80%E5%90%AFgzip%20%E5%8A%A0%E5%BF%AB%E6%8A%A5%E6%96%87%E4%BC%A0%E8%BE%93%E9%80%9F%E5%BA%A6/</link>
+      <guid>https://huisunan.github.io/2023/12/30/spring%20boot%20%E5%BC%80%E5%90%AFgzip%20%E5%8A%A0%E5%BF%AB%E6%8A%A5%E6%96%87%E4%BC%A0%E8%BE%93%E9%80%9F%E5%BA%A6/</guid>
+      <pubDate>Sat, 30 Dec 2023 01:47:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;对于一些带宽比较小的服务器，报文内容比较多的应用，这个操作带来的响应是巨大的&lt;/p&gt;
+&lt;figure class=&quot;highlight yaml&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;sp</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>对于一些带宽比较小的服务器，报文内容比较多的应用，这个操作带来的响应是巨大的</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#配置gzip</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">compression:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">mime-types:</span> <span class="string">application/json</span></span><br><span class="line"> </span><br></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2023/12/30/spring%20boot%20%E5%BC%80%E5%90%AFgzip%20%E5%8A%A0%E5%BF%AB%E6%8A%A5%E6%96%87%E4%BC%A0%E8%BE%93%E9%80%9F%E5%BA%A6/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>spring gateway 超时重试和默认拦截器配置</title>
+      <link>https://huisunan.github.io/2023/12/20/spring%20gateway%20%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E5%92%8C%E9%BB%98%E8%AE%A4%E6%8B%A6%E6%88%AA%E5%99%A8%E9%85%8D%E7%BD%AE/</link>
+      <guid>https://huisunan.github.io/2023/12/20/spring%20gateway%20%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E5%92%8C%E9%BB%98%E8%AE%A4%E6%8B%A6%E6%88%AA%E5%99%A8%E9%85%8D%E7%BD%AE/</guid>
+      <pubDate>Wed, 20 Dec 2023 13:22:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;figure class=&quot;highlight yaml&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs YAML"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">cloud:</span><br>    <span class="hljs-attr">gateway:</span><br>      <span class="hljs-attr">default-filters:</span><br>        <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Retry</span><br>          <span class="hljs-attr">args:</span><br>            <span class="hljs-attr">retries:</span> <span class="hljs-number">3</span><br></code></pre></td></tr></table></figure><p>RetryConfig 中默认的异常处理为IOException.class, TimeoutException.class</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RetryConfig</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">HasRouteId</span> &#123;<br><br><span class="hljs-keyword">private</span> String routeId;<br><br><span class="hljs-keyword">private</span> <span class="hljs-type">int</span> <span class="hljs-variable">retries</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;<br><br><span class="hljs-keyword">private</span> List&lt;Series&gt; series = toList(Series.SERVER_ERROR);<br><br><span class="hljs-keyword">private</span> List&lt;HttpStatus&gt; statuses = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br><br><span class="hljs-keyword">private</span> List&lt;HttpMethod&gt; methods = toList(HttpMethod.GET);<br><br><span class="hljs-keyword">private</span> List&lt;Class&lt;? <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Throwable</span>&gt;&gt; exceptions = toList(IOException.class, TimeoutException.class);<br><br><span class="hljs-keyword">private</span> BackoffConfig backoff;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">allMethods</span><span class="hljs-params">()</span> &#123;<br><span class="hljs-keyword">return</span> setMethods(HttpMethod.values());<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">validate</span><span class="hljs-params">()</span> &#123;<br>Assert.isTrue(<span class="hljs-built_in">this</span>.retries &gt; <span class="hljs-number">0</span>, <span class="hljs-string">&quot;retries must be greater than 0&quot;</span>);<br>Assert.isTrue(!<span class="hljs-built_in">this</span>.series.isEmpty() || !<span class="hljs-built_in">this</span>.statuses.isEmpty() || !<span class="hljs-built_in">this</span>.exceptions.isEmpty(),<br><span class="hljs-string">&quot;series, status and exceptions may not all be empty&quot;</span>);<br>Assert.notEmpty(<span class="hljs-built_in">this</span>.methods, <span class="hljs-string">&quot;methods may not be empty&quot;</span>);<br><span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.backoff != <span class="hljs-literal">null</span>) &#123;<br><span class="hljs-built_in">this</span>.backoff.validate();<br>&#125;<br>&#125;<br><br><span class="hljs-keyword">public</span> BackoffConfig <span class="hljs-title function_">getBackoff</span><span class="hljs-params">()</span> &#123;<br><span class="hljs-keyword">return</span> backoff;<br>&#125;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">setBackoff</span><span class="hljs-params">(BackoffConfig backoff)</span> &#123;<br><span class="hljs-built_in">this</span>.backoff = backoff;<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;<br>&#125;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">setBackoff</span><span class="hljs-params">(Duration firstBackoff, Duration maxBackoff, <span class="hljs-type">int</span> factor,</span><br><span class="hljs-params"><span class="hljs-type">boolean</span> basedOnPreviousValue)</span> &#123;<br><span class="hljs-built_in">this</span>.backoff = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BackoffConfig</span>(firstBackoff, maxBackoff, factor, basedOnPreviousValue);<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;<br>&#125;<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setRouteId</span><span class="hljs-params">(String routeId)</span> &#123;<br><span class="hljs-built_in">this</span>.routeId = routeId;<br>&#125;<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> String <span class="hljs-title function_">getRouteId</span><span class="hljs-params">()</span> &#123;<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>.routeId;<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getRetries</span><span class="hljs-params">()</span> &#123;<br><span class="hljs-keyword">return</span> retries;<br>&#125;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">setRetries</span><span class="hljs-params">(<span class="hljs-type">int</span> retries)</span> &#123;<br><span class="hljs-built_in">this</span>.retries = retries;<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;<br>&#125;<br><br><span class="hljs-keyword">public</span> List&lt;Series&gt; <span class="hljs-title function_">getSeries</span><span class="hljs-params">()</span> &#123;<br><span class="hljs-keyword">return</span> series;<br>&#125;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">setSeries</span><span class="hljs-params">(Series... series)</span> &#123;<br><span class="hljs-built_in">this</span>.series = Arrays.asList(series);<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;<br>&#125;<br><br><span class="hljs-keyword">public</span> List&lt;HttpStatus&gt; <span class="hljs-title function_">getStatuses</span><span class="hljs-params">()</span> &#123;<br><span class="hljs-keyword">return</span> statuses;<br>&#125;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">setStatuses</span><span class="hljs-params">(HttpStatus... statuses)</span> &#123;<br><span class="hljs-built_in">this</span>.statuses = Arrays.asList(statuses);<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;<br>&#125;<br><br><span class="hljs-keyword">public</span> List&lt;HttpMethod&gt; <span class="hljs-title function_">getMethods</span><span class="hljs-params">()</span> &#123;<br><span class="hljs-keyword">return</span> methods;<br>&#125;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">setMethods</span><span class="hljs-params">(HttpMethod... methods)</span> &#123;<br><span class="hljs-built_in">this</span>.methods = Arrays.asList(methods);<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;<br>&#125;<br><br><span class="hljs-keyword">public</span> List&lt;Class&lt;? <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Throwable</span>&gt;&gt; getExceptions() &#123;<br><span class="hljs-keyword">return</span> exceptions;<br>&#125;<br><br><span class="hljs-keyword">public</span> RetryConfig <span class="hljs-title function_">setExceptions</span><span class="hljs-params">(Class&lt;? extends Throwable&gt;... exceptions)</span> &#123;<br><span class="hljs-built_in">this</span>.exceptions = Arrays.asList(exceptions);<br><span class="hljs-keyword">return</span> <span class="hljs-built_in">this</span>;<br>&#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2023/12/20/spring%20gateway%20%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E5%92%8C%E9%BB%98%E8%AE%A4%E6%8B%A6%E6%88%AA%E5%99%A8%E9%85%8D%E7%BD%AE/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>spring boot 配置get方法枚举转换策略</title>
+      <link>https://huisunan.github.io/2023/12/19/spring%20boot%20%E9%85%8D%E7%BD%AEget%E6%96%B9%E6%B3%95%E6%9E%9A%E4%B8%BE%E8%BD%AC%E6%8D%A2%E7%AD%96%E7%95%A5/</link>
+      <guid>https://huisunan.github.io/2023/12/19/spring%20boot%20%E9%85%8D%E7%BD%AEget%E6%96%B9%E6%B3%95%E6%9E%9A%E4%B8%BE%E8%BD%AC%E6%8D%A2%E7%AD%96%E7%95%A5/</guid>
+      <pubDate>Tue, 19 Dec 2023 10:05:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;配置转换器&lt;/p&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>配置转换器</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@SuppressWarnings(&#123;&quot;rawtypes&quot;, &quot;unchecked&quot;&#125;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CompositeEnumConverterFactory</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ConverterFactory</span>&lt;String, Enum&lt;?&gt;&gt; &#123;<br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> &lt;T <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Enum</span>&lt;?&gt;&gt; Converter&lt;String, T&gt; <span class="hljs-title function_">getConverter</span><span class="hljs-params">(Class&lt;T&gt; targetType)</span> &#123;<br><span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringToEnum</span>&lt;&gt;(targetType);<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure><p>注入spring容器中</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration(proxyBeanMethods = false)</span><br><span class="hljs-meta">@ConditionalOnClass(WebMvcConfigurer.class)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ZbMvcConfig</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">WebMvcConfigurer</span> &#123;<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">addFormatters</span><span class="hljs-params">(FormatterRegistry registry)</span> &#123;<br>registry.addConverterFactory(<span class="hljs-keyword">new</span> <span class="hljs-title class_">CompositeEnumConverterFactory</span>());<br>&#125;<br><br>&#125;<br><br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2023/12/19/spring%20boot%20%E9%85%8D%E7%BD%AEget%E6%96%B9%E6%B3%95%E6%9E%9A%E4%B8%BE%E8%BD%AC%E6%8D%A2%E7%AD%96%E7%95%A5/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>Spel表达demo</title>
+      <link>https://huisunan.github.io/2023/03/08/Spel%E8%A1%A8%E8%BE%BEdemo/</link>
+      <guid>https://huisunan.github.io/2023/03/08/Spel%E8%A1%A8%E8%BE%BEdemo/</guid>
+      <pubDate>Wed, 08 Mar 2023 13:59:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs java"><br><span class="hljs-keyword">package</span> com.example.demo;<br><br><span class="hljs-keyword">import</span> org.junit.jupiter.api.Test;<br><span class="hljs-keyword">import</span> org.springframework.boot.test.context.SpringBootTest;<br><span class="hljs-keyword">import</span> org.springframework.context.expression.MapAccessor;<br><span class="hljs-keyword">import</span> org.springframework.expression.Expression;<br><span class="hljs-keyword">import</span> org.springframework.expression.common.TemplateParserContext;<br><span class="hljs-keyword">import</span> org.springframework.expression.spel.standard.SpelExpressionParser;<br><span class="hljs-keyword">import</span> org.springframework.expression.spel.support.StandardEvaluationContext;<br><br><span class="hljs-keyword">import</span> java.util.Collections;<br><span class="hljs-keyword">import</span> java.util.Map;<br><br><span class="hljs-meta">@SpringBootTest</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">DemoApplicationTests</span> &#123;<br><br><span class="hljs-meta">@Test</span><br><span class="hljs-keyword">void</span> <span class="hljs-title function_">test1</span><span class="hljs-params">()</span> &#123;<br><br><span class="hljs-type">TemplateParserContext</span> <span class="hljs-variable">templateParserContext</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">TemplateParserContext</span>(<span class="hljs-string">&quot;$&#123;&quot;</span>,<span class="hljs-string">&quot;&#125;&quot;</span>);<br><span class="hljs-type">StandardEvaluationContext</span> <span class="hljs-variable">context</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StandardEvaluationContext</span>();<br>context.addPropertyAccessor(<span class="hljs-keyword">new</span> <span class="hljs-title class_">MapAccessor</span>());<br>context.setRootObject(Map.of(<br><span class="hljs-string">&quot;map&quot;</span>, Collections.singletonMap(<span class="hljs-string">&quot;a&quot;</span>,<span class="hljs-string">&quot;b&quot;</span>),<br><span class="hljs-string">&quot;test&quot;</span>,<span class="hljs-string">&quot;this is a test&quot;</span><br>));<br><span class="hljs-type">SpelExpressionParser</span> <span class="hljs-variable">parser</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SpelExpressionParser</span>();<br><span class="hljs-type">Expression</span> <span class="hljs-variable">expression</span> <span class="hljs-operator">=</span> parser.parseExpression(<span class="hljs-string">&quot;map.a : $&#123;map.a&#125;&quot;</span>,templateParserContext);<br><span class="hljs-type">Object</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> expression.getValue(context);<br>System.out.println(value);<br>&#125;<br><br><br><span class="hljs-meta">@Test</span><br><span class="hljs-keyword">void</span> <span class="hljs-title function_">test2</span><span class="hljs-params">()</span>&#123;<br><span class="hljs-type">StandardEvaluationContext</span> <span class="hljs-variable">context</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StandardEvaluationContext</span>();<br>context.setVariable(<span class="hljs-string">&quot;test&quot;</span>,<span class="hljs-string">&quot;this is a test&quot;</span>);<br><span class="hljs-type">SpelExpressionParser</span> <span class="hljs-variable">parser</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SpelExpressionParser</span>();<br>System.out.println(parser.parseExpression(<span class="hljs-string">&quot;#test&quot;</span>).getValue(context));<br>&#125;<br>&#125;<br><br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2023/03/08/Spel%E8%A1%A8%E8%BE%BEdemo/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>jenkins  mavend mvn too many open files</title>
+      <link>https://huisunan.github.io/2023/03/01/jenkins%20%20mavend%20mvn%20too%20many%20open%20files/</link>
+      <guid>https://huisunan.github.io/2023/03/01/jenkins%20%20mavend%20mvn%20too%20many%20open%20files/</guid>
+      <pubDate>Wed, 01 Mar 2023 14:38:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;先配置mvnd的配置文件 conf&amp;#x2F;mvnd.properties&lt;/p&gt;
+&lt;figure class=&quot;highlight plaintext&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pr</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>先配置mvnd的配置文件 conf&#x2F;mvnd.properties</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mvnd.jvmArgs=-XX:-MaxFDLimit</span><br></pre></td></tr></table></figure><p>jenkins 启动命令添加-XX:-MaxFDLimit</p><p>修改系统ulimt的open files 大小</p>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/ops/">ops</category>
+      
+      
+      <comments>https://huisunan.github.io/2023/03/01/jenkins%20%20mavend%20mvn%20too%20many%20open%20files/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>Seata Xa事务超时问题排查和解决</title>
+      <link>https://huisunan.github.io/2023/02/25/Seata%20Xa%E4%BA%8B%E5%8A%A1%E8%B6%85%E6%97%B6%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E5%92%8C%E8%A7%A3%E5%86%B3/</link>
+      <guid>https://huisunan.github.io/2023/02/25/Seata%20Xa%E4%BA%8B%E5%8A%A1%E8%B6%85%E6%97%B6%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E5%92%8C%E8%A7%A3%E5%86%B3/</guid>
+      <pubDate>Sat, 25 Feb 2023 10:58:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;现有服务列表&lt;br&gt;&lt;img src=&quot;https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20230225185321386-1855228608</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>现有服务列表<br><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20230225185321386-1855228608_1730686602019.png"></p><p>在使用seata时总会超时</p><p>通过skyWalking追踪发现<br><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20230225185427826-1128974312_1730686613411.png"></p><p><img src="https://raw.githubusercontent.com/huisunan/cdn/main/img/1410909-20230225185454578-207629072_1730686613411.png"></p><p>在调用接口camunda&#x2F;group&#x2F;list时获取getConnection超时，<br>在全局事务回滚后，sql又能正常执行</p><p>问题原因和解决：</p><p>因为没有配置数据库连接池数量，全局事务结束前会挂起connection，服务被频繁调用，把连接池占满，后续新来的请求，没有链接可以使用，造成超时</p><p>解决方案：加大连接池数量</p>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2023/02/25/Seata%20Xa%E4%BA%8B%E5%8A%A1%E8%B6%85%E6%97%B6%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E5%92%8C%E8%A7%A3%E5%86%B3/#disqus_thread</comments>
+      
+    </item>
+    
+    <item>
+      <title>JacksonTypeInfo</title>
+      <link>https://huisunan.github.io/2023/01/06/JacksonTypeInfo/</link>
+      <guid>https://huisunan.github.io/2023/01/06/JacksonTypeInfo/</guid>
+      <pubDate>Fri, 06 Jan 2023 15:25:00 GMT</pubDate>
+      
+        
+        
+      <description>&lt;span id=&quot;more&quot;&gt;&lt;/span&gt;
+
+&lt;p&gt;Jackson解决泛型丢失&lt;/p&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;</description>
+        
+      
+      
+      
+      <content:encoded><![CDATA[<span id="more"></span><p>Jackson解决泛型丢失</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@JacksonTypeInfo</span><br></code></pre></td></tr></table></figure>]]></content:encoded>
+      
+      
+      
+      <category domain="https://huisunan.github.io/%E6%A0%87%E7%AD%BE/java/">java</category>
+      
+      
+      <comments>https://huisunan.github.io/2023/01/06/JacksonTypeInfo/#disqus_thread</comments>
+      
+    </item>
+    
+  </channel>
+</rss>

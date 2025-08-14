@@ -1,3 +1,4 @@
+https://huisunan.github.io/2025/08/14/%E8%A7%A3%E5%86%B3-SLF4J-%E5%A4%9A%E6%8F%90%E4%BE%9B%E8%80%85%E5%86%B2%E7%AA%81%EF%BC%9A%E8%AE%A9-TLogLogbackSLF4JServiceProvider-%E7%94%9F%E6%95%88%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/
 https://huisunan.github.io/2025/08/06/containerd%E6%8E%A8%E9%80%81%E9%95%9C%E5%83%8F/
 https://huisunan.github.io/2025/06/28/%E8%87%AA%E5%BB%BAopenVpn-%E5%8F%8C%E5%90%91%E9%80%9A%E4%BF%A1/
 https://huisunan.github.io/2025/05/21/pt-online-schema-change%E4%BD%BF%E7%94%A8/
@@ -85,3 +86,8 @@ https://huisunan.github.io/%E6%A0%87%E7%AD%BE/other/
 https://huisunan.github.io/%E6%A0%87%E7%AD%BE/k8s/
 https://huisunan.github.io/%E6%A0%87%E7%AD%BE/openvpn/
 https://huisunan.github.io/%E6%A0%87%E7%AD%BE/containerd/
+https://huisunan.github.io/%E6%A0%87%E7%AD%BE/Java/
+https://huisunan.github.io/%E6%A0%87%E7%AD%BE/%E6%97%A5%E5%BF%97%E6%A1%86%E6%9E%B6/
+https://huisunan.github.io/%E6%A0%87%E7%AD%BE/SLF4J/
+https://huisunan.github.io/%E6%A0%87%E7%AD%BE/TLog/
+https://huisunan.github.io/categories/%E6%8A%80%E6%9C%AF%E6%8E%92%E6%9F%A5/
